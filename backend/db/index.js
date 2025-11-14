@@ -1,0 +1,36 @@
+// backend/db/index.js
+const { Client } = require('pg');
+require('dotenv').config();
+
+// Database configuration from .env file
+const client = new Client({
+  host: process.env.DB_HOST ,
+  user: process.env.DB_USER ,
+  port: process.env.DB_PORT ,
+  password: process.env.DB_PASSWORD ,
+  database: process.env.DB_NAME
+});
+
+// Test the connection
+const connectDB = async () => {
+  try {
+    await client.connect();
+    console.log('Database connection has been established successfully.');
+  } catch (error) {
+    console.error('Unable to connect to the database:', error);
+    throw error;
+  }
+};
+
+// Close the connection
+const closeDB = async () => {
+  try {
+    await client.end();
+    console.log('Database connection closed.');
+  } catch (error) {
+    console.error('Error closing database connection:', error);
+    throw error;
+  }
+};
+
+module.exports = { client, connectDB, closeDB };

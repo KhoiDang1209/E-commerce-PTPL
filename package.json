@@ -1,0 +1,28 @@
+{
+  "name": "e-commerce-ptpl",
+  "version": "1.0.0",
+  "description": "1. ERD - Khôi",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KhoiDang1209/E-commerce-PTPL.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/KhoiDang1209/E-commerce-PTPL/issues"
+  },
+  "homepage": "https://github.com/KhoiDang1209/E-commerce-PTPL#readme",
+  "dependencies": {
+    "pg": "^8.16.3",
+    "sequelize": "^6.37.7"
+  }
+}
