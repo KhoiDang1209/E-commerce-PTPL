@@ -1,6 +1,5 @@
 // backend/db/index.js
 const { Client } = require('pg');
-require('dotenv').config();
 
 // Database configuration from .env file
 const client = new Client({
