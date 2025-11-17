@@ -8,7 +8,7 @@ exports.login = async (req, res) => {
     const { username, password } = req.body; 
 
     if (!username || !password) {
-        return res.status(400).json({ message: "Vui lòng nhập tên người dùng và mật khẩu." });
+        return res.status(400).json({ message: "Please input Username and Password" });
     }
 
     try {
