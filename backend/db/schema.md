@@ -193,6 +193,19 @@ User accounts.
 | date_of_birth | date | | Date of birth |
 | country | varchar | | Country |
 
+#### session
+Session storage for authenticated users (server-side session store).
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| sid    | varchar       | PRIMARY KEY, NOT NULL | Session ID (matches the cookie) |
+| sess   | json          | NOT NULL             | Session payload (e.g., {"userId": 1, "role": "admin"}) |
+| expire | timestamp(6)  | NOT NULL             | Expiration timestamp for this session |
+
+**Indexes:**
+- Primary key on `sid`
+- Index on `expire` (`IDX_session_expire`) to quickly find expired sessions
+
 #### user_billing_addresses
 User billing addresses.
 
