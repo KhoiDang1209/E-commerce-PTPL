@@ -1,8 +1,10 @@
 import React, { useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './HeroCarousel.css';
 
-const HeroCarousel = ({ items }) => {
+const HeroCarousel = ({ items, onToggleWishlist, wishlistIds = new Set(), isAuthed }) => {
   const trackRef = useRef(null);
+  const navigate = useNavigate();
 
   const scrollByCards = (dir) => {
     const el = trackRef.current;
@@ -19,11 +21,36 @@ const HeroCarousel = ({ items }) => {
         {'<'}
       </button>
       <div className="hero__track" ref={trackRef}>
-        {items.map((item) => (
-          <div className="hero__card" key={item.id}>
-            <span className={`hero__badge hero__badge--${item.badge || 'hot'}`}>
-              {item.badgeLabel}
-            </span>
+        {items.map((item, idx) => (
+          <div
+            className="hero__card"
+            key={item.id || item.appId || `hero-card-${idx}`}
+            role="button"
+            tabIndex={0}
+            style={{ cursor: item.appId ? 'pointer' : 'default' }}
+            onClick={() => item.appId && navigate(`/game/${item.appId}`)}
+            onKeyDown={(e) => {
+              if (!item.appId) return;
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                navigate(`/game/${item.appId}`);
+              }
+            }}
+          >
+            {item.appId && onToggleWishlist && (
+              <button
+                className="hero__wish"
+                aria-label="toggle wishlist"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onToggleWishlist(item.appId);
+                }}
+              >
+                <span className={wishlistIds.has(Number(item.appId)) || wishlistIds.has(String(item.appId)) ? 'hero__heart hero__heart--active' : 'hero__heart'}>
+                  ♥
+                </span>
+              </button>
+            )}
             {item.discountPercent > 0 && (
               <span className="hero__discount">{`-${item.discountPercent}%`}</span>
             )}

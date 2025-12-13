@@ -33,9 +33,9 @@ Reference (public)
 - `GET /reference/genres/:id` — `{ success:true, data:{ genre } }`
 
 Games (public; recommended uses session if present)
-- All game responses now include `publishers` (array of publisher names) along with existing fields.
+- All list/search responses now include `publishers` (array of publisher names) plus `header_image` and `background`.
 - `GET /games` — query: `limit`, `offset`, `sortBy`, `order`, `platform`, `minPrice`, `maxPrice`, `hasDiscount=true|false`; success: `{ success:true, data:{ games, count, limit, offset }, message }`.
-- `GET /games/:appId` — success: `{ success:true, data:{ game:{ ...details, genres, categories, publishers } }, message }`.
+- `GET /games/:appId` — success: `{ success:true, data:{ game:{ ...g, detailed_description, supported_languages, website, header_image, background, publishers, developers:[{id,name}], languages:[{id,name}], categories:[{id,name}], genres:[{id,name}], specs... } }, message }`.
 - `GET /games/search` — query: `q` (required), `limit`, `offset`, `sortBy`, `order`; success: `{ success:true, data:{ games, count, query, limit, offset }, message }`.
 - `GET /games/featured` — query: `limit`; success: `{ success:true, data:{ games }, message }`.
 - `GET /games/recommended` — query: `limit`, `offset`, `minMatches`, `sortBy`, `order`; success: `{ success:true, data:{ games, count, limit, offset }, message }`.

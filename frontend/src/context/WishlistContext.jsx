@@ -29,7 +29,12 @@ export const WishlistProvider = ({ children }) => {
     try {
       setLoading(true);
       const response = await wishlistService.getWishlist();
-      setWishlist(response.data || []);
+      const data =
+        response?.data?.games ||
+        response?.data ||
+        response?.games ||
+        (Array.isArray(response) ? response : []);
+      setWishlist(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Error fetching wishlist:', error);
     } finally {

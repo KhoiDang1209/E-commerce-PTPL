@@ -30,6 +30,31 @@
   min-height: 160px;
 }
 
+.hero__wish {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid #e5e7eb;
+  border-radius: 999px;
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  z-index: 2;
+  box-shadow: 0 6px 18px rgba(17, 24, 39, 0.12);
+}
+
+.hero__heart {
+  color: #9ca3af;
+  font-size: 18px;
+}
+
+.hero__heart--active {
+  color: #ef4444;
+}
+
 .hero__card img {
   width: 100%;
   height: 150px;

@@ -6,15 +6,9 @@ export const adminService = {
     return response.data;
   },
 
-// 🔥 [CẬP NHẬT] Hàm mới để lấy số liệu thống kê
+  // Get dashboard statistics (uses session-based auth)
   getDashboardStats: async () => {
-  const token = localStorage.getItem('adminToken');
-
-  const response = await api.get('/admin/stats', {
-    headers: {
-      Authorization: `Bearer ${token}`
-    }
-  });
+    const response = await api.get('/admin/stats');
     // Trả về { orders: number, users: number, games: number }
     return response.data; 
   },

@@ -9,42 +9,62 @@ module.exports = {
       const { email, password } = req.body;
 
       if (!email || !password) {
-        return res.status(400).json({ message: "Email and password are required" });
+        return sendError(res, 'Email and password are required', 'MISSING_CREDENTIALS', 400);
       }
 
       // Lấy user bằng email
       const user = await queries.users.getUserByEmail(email);
 
       if (!user) {
-        return res.status(401).json({ message: "Invalid email or password" });
+        return sendError(res, 'Invalid email or password', 'INVALID_CREDENTIALS', 401);
       }
 
       // Kiểm tra role
       if (user.role !== "admin") {
-        return res.status(403).json({ message: "Access denied: Not an admin" });
+        return sendError(res, 'Access denied: Not an admin', 'ACCESS_DENIED', 403);
       }
 
       // So sánh mật khẩu
       const isMatch = await bcrypt.compare(password, user.password_hash);
       if (!isMatch) {
-        return res.status(401).json({ message: "Invalid email or password" });
+        return sendError(res, 'Invalid email or password', 'INVALID_CREDENTIALS', 401);
       }
 
+      // Create session
+      req.session.user = {
+        id: user.id,
+        email: user.email,
+        username: user.username,
+        role: user.role,
+        loginTime: Date.now(),
+        lastActivity: Date.now()
+      };
 
-      res.json({
-        message: "Admin login successful",
-        token,
-        admin: {
-          id: user.id,
-          email: user.email,
-          username: user.username,
-          role: user.role,
+      // Configure session expiry (3 hours default)
+      const sessionDurationMs = parseInt(process.env.SESSION_DURATION_HOURS || '3', 10) * 60 * 60 * 1000;
+      req.session.cookie.maxAge = sessionDurationMs;
+
+      // Save session explicitly (ensure it's persisted)
+      req.session.save((err) => {
+        if (err) {
+          console.error('Session save error:', err);
+          return sendError(res, 'Login failed - session error', 'SESSION_ERROR', 500);
         }
+
+        return sendSuccess(res, {
+          admin: {
+            id: user.id,
+            email: user.email,
+            username: user.username,
+            role: user.role
+          },
+          sessionId: req.sessionID
+        }, 'Admin login successful');
       });
 
     } catch (error) {
       console.error("Admin login error:", error);
-      res.status(500).json({ message: "Server error" });
+      return sendError(res, 'Server error', 'INTERNAL_ERROR', 500);
     }
   },
 

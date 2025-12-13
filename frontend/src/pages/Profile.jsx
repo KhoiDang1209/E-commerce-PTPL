@@ -22,22 +22,9 @@ const Profile = () => {
   const [loadingWishlist, setLoadingWishlist] = useState(true);
   // ---------------------
 
-  // ⭐ FIX HERE: mapper to convert backend snake_case → camelCase
-  const mapWishlistItem = (raw) => ({
-    app_id: raw.app_id,
-    name: raw.name,
-    title: raw.title,
-    price_final: raw.price_final,
-    price_org: raw.price_org,
-    discount_percent: raw.discount_percent,
-
-    header_image: raw.header_image,
-    background: raw.background,
-    categories: raw.categories,
-    genres: raw.genres,
-
-    wishlist_added_at: raw.wishlist_added_at
-  });
+  // Backend returns all game fields (g.*) plus wishlist-specific fields
+  // No mapping needed - backend already provides all required fields
+  const mapWishlistItem = (raw) => raw;
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -62,21 +49,27 @@ const Profile = () => {
     // ------------------
     const fetchWishlist = async () => {
       try {
-        const data = await userService.getWishlist();
-        // backend returns structure like: { games: [...], count, ... }
+        const response = await userService.getWishlist();
+        // Backend returns: { success: true, data: { games: [...], count, limit, offset }, message }
+        // userService.getWishlist() returns response.data, so we get the full response object
         let gamesRaw = [];
-        if (Array.isArray(data)) gamesRaw = data;
-        else if (Array.isArray(data?.games)) gamesRaw = data.games;
-        else if (Array.isArray(data?.data)) gamesRaw = data.data;
-        else if (Array.isArray(data?.profile?.wishlist)) gamesRaw = data.profile.wishlist;
-        else gamesRaw = [];
+        if (response?.data?.games && Array.isArray(response.data.games)) {
+          gamesRaw = response.data.games;
+        } else if (Array.isArray(response?.data)) {
+          gamesRaw = response.data;
+        } else if (Array.isArray(response?.games)) {
+          gamesRaw = response.games;
+        } else if (Array.isArray(response)) {
+          gamesRaw = response;
+        }
 
-        // ⭐ FIX HERE: map each item to proper keys
+        // Map each item to proper keys (backend returns snake_case, we keep it for consistency)
         const games = gamesRaw.map(mapWishlistItem);
 
         setWishlist(games);
       } catch (err) {
         console.error("Failed to load wishlist", err);
+        setWishlist([]);
       } finally {
         setLoadingWishlist(false);
       }
@@ -199,15 +192,28 @@ const Profile = () => {
               {wishlist.map((game) => (
                 <div key={game.app_id} style={styles.gameCard}>
                   <img
-                    src={game.header_image || game.background || game.thumbnail || ''}
-                    alt={game.name || game.title || 'Game'}
+                    src={game.header_image || game.background || ''}
+                    alt={game.name || 'Game'}
                     style={{ width: "100%", borderRadius: "10px", objectFit: "cover", height: 120 }}
                   />
-                  <h4 style={{ margin: 0 }}>{game.name || game.title}</h4>
+                  <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: 600 }}>{game.name || 'Untitled Game'}</h4>
 
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
-                    <div style={{ fontSize: 14, color: '#6b7280' }}>
-                      {game.price_final != null ? `$${Number(game.price_final).toFixed(2)}` : (game.price_org ? `$${Number(game.price_org).toFixed(2)}` : '')}
+                    <div style={{ fontSize: 14, color: '#6b7280', fontWeight: 500 }}>
+                      {game.price_final != null ? (
+                        <>
+                          <span style={{ color: '#111' }}>${Number(game.price_final).toFixed(2)}</span>
+                          {game.price_org && Number(game.price_org) > Number(game.price_final) && (
+                            <span style={{ textDecoration: 'line-through', marginLeft: 8, color: '#9ca3af' }}>
+                              ${Number(game.price_org).toFixed(2)}
+                            </span>
+                          )}
+                        </>
+                      ) : game.price_org ? (
+                        `$${Number(game.price_org).toFixed(2)}`
+                      ) : (
+                        'Price N/A'
+                      )}
                     </div>
 
                     <div style={{ display: 'flex', gap: 8 }}>
@@ -227,7 +233,7 @@ const Profile = () => {
 
                       <button
                         style={styles.secondarySmallBtn}
-                        onClick={() => window.location.href = `/games/${game.app_id}`}
+                        onClick={() => window.location.href = `/game/${game.app_id}`}
                       >
                         View
                       </button>

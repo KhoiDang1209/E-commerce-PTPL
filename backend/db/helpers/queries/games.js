@@ -57,7 +57,7 @@ const gamesQueries = {
   },
 
   /**
-   * Get game with full details (game, description, specs)
+   * Get game with full details (game, description, specs, relations)
    * @param {number} appId - Game app_id
    * @returns {Promise<Object|null>} Game with full details or null
    */
@@ -73,6 +73,10 @@ const gamesQueries = {
         gd.categories,
         gd.genres,
         pub.publishers,
+        devs.developers,
+        langs.languages,
+        cats.categories_json,
+        gens.genres_json,
         gs.pc_min_os,
         gs.pc_min_processor,
         gs.pc_min_memory,
@@ -95,6 +99,30 @@ const gamesQueries = {
         JOIN publishers p ON gp.publisher_id = p.id
         WHERE gp.app_id = g.app_id
       ) pub ON TRUE
+      LEFT JOIN LATERAL (
+        SELECT json_agg(json_build_object('id', d.id, 'name', d.name)) AS developers
+        FROM game_developers gdv
+        JOIN developers d ON gdv.developer_id = d.id
+        WHERE gdv.app_id = g.app_id
+      ) devs ON TRUE
+      LEFT JOIN LATERAL (
+        SELECT json_agg(json_build_object('id', l.id, 'name', l.name)) AS languages
+        FROM game_languages gl
+        JOIN languages l ON gl.language_id = l.id
+        WHERE gl.app_id = g.app_id
+      ) langs ON TRUE
+      LEFT JOIN LATERAL (
+        SELECT json_agg(json_build_object('id', c.id, 'name', c.name)) AS categories_json
+        FROM game_categories gc
+        JOIN categories c ON gc.category_id = c.id
+        WHERE gc.app_id = g.app_id
+      ) cats ON TRUE
+      LEFT JOIN LATERAL (
+        SELECT json_agg(json_build_object('id', gnr.id, 'name', gnr.name)) AS genres_json
+        FROM game_genres gg
+        JOIN genres gnr ON gg.genre_id = gnr.id
+        WHERE gg.app_id = g.app_id
+      ) gens ON TRUE
       LEFT JOIN game_specs gs ON g.app_id = gs.app_id
       WHERE g.app_id = $1
     `;
@@ -137,6 +165,17 @@ const gamesQueries = {
     // Discount filter
     if (filters.hasDiscount !== undefined && filters.hasDiscount) {
       conditions.push(`discount_percent > 0`);
+    }
+
+    // Language filter
+    if (filters.languageId !== undefined && filters.languageId !== null && filters.languageId !== '') {
+      conditions.push(`EXISTS (
+        SELECT 1 FROM game_languages gl 
+        WHERE gl.app_id = g.app_id 
+        AND gl.language_id = $${paramIndex}
+      )`);
+      paramValues.push(parseInt(filters.languageId, 10));
+      paramIndex++;
     }
 
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
@@ -221,9 +260,26 @@ const gamesQueries = {
    * @returns {Promise<Array>} Array of games
    */
   getGamesByGenre: async (genreId, options = {}) => {
-    const { limit, offset, sortBy = 'name', order = 'ASC' } = options;
+    const { limit, offset, sortBy = 'name', order = 'ASC', languageId } = options;
     const orderClause = buildOrderClause(`g.${sortBy}`, order);
     const paginationClause = buildPaginationClause(limit, offset);
+    
+    const paramValues = [genreId];
+    const conditions = ['gg.genre_id = $1'];
+    let paramIndex = 2;
+    
+    // Language filter
+    if (languageId !== undefined && languageId !== null && languageId !== '') {
+      conditions.push(`EXISTS (
+        SELECT 1 FROM game_languages gl 
+        WHERE gl.app_id = g.app_id 
+        AND gl.language_id = $${paramIndex}
+      )`);
+      paramValues.push(parseInt(languageId, 10));
+      paramIndex++;
+    }
+    
+    const whereClause = `WHERE ${conditions.join(' AND ')}`;
 
     const queryText = `
       SELECT g.*, gd.header_image, gd.background, pub.publishers
@@ -236,12 +292,12 @@ const gamesQueries = {
         JOIN publishers p ON gp.publisher_id = p.id
         WHERE gp.app_id = g.app_id
       ) pub ON TRUE
-      WHERE gg.genre_id = $1
+      ${whereClause}
       ${orderClause}
       ${paginationClause}
     `.trim();
 
-    return await query(queryText, [genreId]);
+    return await query(queryText, paramValues);
   },
 
   /**
@@ -251,9 +307,26 @@ const gamesQueries = {
    * @returns {Promise<Array>} Array of games
    */
   getGamesByCategory: async (categoryId, options = {}) => {
-    const { limit, offset, sortBy = 'name', order = 'ASC' } = options;
+    const { limit, offset, sortBy = 'name', order = 'ASC', languageId } = options;
     const orderClause = buildOrderClause(`g.${sortBy}`, order);
     const paginationClause = buildPaginationClause(limit, offset);
+    
+    const paramValues = [categoryId];
+    const conditions = ['gc.category_id = $1'];
+    let paramIndex = 2;
+    
+    // Language filter
+    if (languageId !== undefined && languageId !== null && languageId !== '') {
+      conditions.push(`EXISTS (
+        SELECT 1 FROM game_languages gl 
+        WHERE gl.app_id = g.app_id 
+        AND gl.language_id = $${paramIndex}
+      )`);
+      paramValues.push(parseInt(languageId, 10));
+      paramIndex++;
+    }
+    
+    const whereClause = `WHERE ${conditions.join(' AND ')}`;
 
     const queryText = `
       SELECT g.*, gd.header_image, gd.background, pub.publishers
@@ -266,12 +339,12 @@ const gamesQueries = {
         JOIN publishers p ON gp.publisher_id = p.id
         WHERE gp.app_id = g.app_id
       ) pub ON TRUE
-      WHERE gc.category_id = $1
+      ${whereClause}
       ${orderClause}
       ${paginationClause}
     `.trim();
 
-    return await query(queryText, [categoryId]);
+    return await query(queryText, paramValues);
   },
 
   /**

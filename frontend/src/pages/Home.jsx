@@ -1,9 +1,11 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import Navbar from '../components/layout/Navbar';
 import HeroCarousel from '../components/layout/HeroCarousel';
 import { gameService } from '../services/gameService';
 import { referenceService } from '../services/referenceService';
 import { useAuth } from '../context/AuthContext';
+import { useWishlist } from '../context/WishlistContext';
 
 // Custom dropdown to allow fully stylable option lists
 const CustomDropdown = ({ options = [], value, onChange }) => {
@@ -102,7 +104,9 @@ const CustomDropdown = ({ options = [], value, onChange }) => {
 };
 
 const Home = () => {
-  const { logout } = useAuth();
+  const { logout, isAuthenticated } = useAuth();
+  const { wishlist, addToWishlist, removeFromWishlist, fetchWishlist } = useWishlist();
+  const navigate = useNavigate();
   const [recommended, setRecommended] = useState([]);
   const [gamesLoading, setGamesLoading] = useState(false);
   const [gamesError, setGamesError] = useState('');
@@ -118,6 +122,7 @@ const Home = () => {
   const [catalogOffset, setCatalogOffset] = useState(0);
   const [hasMoreGames, setHasMoreGames] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [allFilteredGames, setAllFilteredGames] = useState([]); // Cache for all filtered games
   const [genreOptions, setGenreOptions] = useState([{ value: '', label: 'Any' }]);
   const [categoryOptions, setCategoryOptions] = useState([{ value: '', label: 'Any' }]);
   const [languageOptions, setLanguageOptions] = useState([{ value: '', label: 'Any' }]);
@@ -147,6 +152,38 @@ const Home = () => {
     if (str.includes(' ')) return str.split(' ')[0];
     if (str.includes('T')) return str.split('T')[0];
     return str.slice(0, 10);
+  };
+
+  const wishlistIds = useMemo(() => {
+    const set = new Set();
+    const list = Array.isArray(wishlist) ? wishlist : [];
+    list.forEach((w) => {
+      const id = w.appId || w.app_id || w.id;
+      if (id !== undefined && id !== null) {
+        set.add(String(id));
+        set.add(Number(id));
+      }
+    });
+    return set;
+  }, [wishlist]);
+
+  const handleToggleWishlist = async (appId) => {
+    if (!appId) return;
+    if (!isAuthenticated) {
+      navigate('/login');
+      return;
+    }
+    const keyStr = String(appId);
+    try {
+      if (wishlistIds.has(keyStr) || wishlistIds.has(Number(appId))) {
+        await removeFromWishlist(appId);
+      } else {
+        await addToWishlist(appId);
+      }
+      await fetchWishlist();
+    } catch (err) {
+      // silently fail for now
+    }
   };
 
   const formatPrice = (val) => {
@@ -296,55 +333,94 @@ const Home = () => {
       setCatalogError('');
       try {
         const limit = 20;
-        let res;
+        let games = [];
         
-        // Determine which endpoint to use based on filters
-        if (filters.genreId) {
-          // Use genre endpoint - it supports sortBy, order, limit, offset
+        // If both genre and category are selected, fetch from both and intersect
+        if (filters.genreId && filters.categoryId) {
+          const [genreRes, categoryRes] = await Promise.all([
+            gameService.getGamesByGenre(filters.genreId, { 
+              limit: 200, 
+              offset: 0, 
+              sortBy: filters.sortBy, 
+              order: filters.order,
+              languageId: filters.languageId || undefined
+            }),
+            gameService.getGamesByCategory(filters.categoryId, { 
+              limit: 200, 
+              offset: 0, 
+              sortBy: filters.sortBy, 
+              order: filters.order,
+              languageId: filters.languageId || undefined
+            })
+          ]);
+          
+          const genreGames = normalizeGames(genreRes);
+          const categoryGames = normalizeGames(categoryRes);
+          
+          // Create sets of app_ids for intersection
+          const genreIds = new Set(genreGames.map(g => g.app_id || g.id || g.appId));
+          const categoryIds = new Set(categoryGames.map(g => g.app_id || g.id || g.appId));
+          
+          // Find games that appear in both sets
+          const intersectionIds = new Set([...genreIds].filter(id => categoryIds.has(id)));
+          
+          // Get the actual game objects (prefer genre results for consistency)
+          games = genreGames.filter(g => {
+            const id = g.app_id || g.id || g.appId;
+            return intersectionIds.has(id);
+          });
+        } else if (filters.genreId) {
+          // Use genre endpoint
           const params = {
-            limit,
-            offset,
+            limit: 200, // Fetch more to account for client-side filtering
+            offset: 0,
             sortBy: filters.sortBy,
             order: filters.order,
           };
-          res = await gameService.getGamesByGenre(filters.genreId, params);
+          if (filters.languageId) params.languageId = filters.languageId;
+          const res = await gameService.getGamesByGenre(filters.genreId, params);
+          games = normalizeGames(res);
         } else if (filters.categoryId) {
           // Use category endpoint
           const params = {
-            limit,
-            offset,
+            limit: 200, // Fetch more to account for client-side filtering
+            offset: 0,
             sortBy: filters.sortBy,
             order: filters.order,
           };
-          res = await gameService.getGamesByCategory(filters.categoryId, params);
+          if (filters.languageId) params.languageId = filters.languageId;
+          const res = await gameService.getGamesByCategory(filters.categoryId, params);
+          games = normalizeGames(res);
         } else {
-          // Use general games endpoint
+          // Use general games endpoint - supports platform, price, and language server-side
           const params = {
-            limit,
-            offset,
+            limit: 200, // Fetch more to account for client-side filtering
+            offset: 0,
             sortBy: filters.sortBy,
             order: filters.order,
           };
           if (filters.platform) params.platform = filters.platform;
           if (filters.minPrice !== '') params.minPrice = Number(filters.minPrice);
           if (filters.maxPrice !== '') params.maxPrice = Number(filters.maxPrice);
-          res = await gameService.getGames(params);
+          if (filters.languageId) params.languageId = filters.languageId;
+          const res = await gameService.getGames(params);
+          games = normalizeGames(res);
         }
 
-        const games = normalizeGames(res);
-        
-        // Filter by price if using genre/category endpoints (they don't support price filters)
+        // Apply all client-side filters that weren't handled server-side
         let filteredGames = games;
+        
+        // Filter by price (if not already filtered server-side)
         if ((filters.genreId || filters.categoryId) && (filters.minPrice !== '' || filters.maxPrice !== '')) {
-          filteredGames = games.filter((g) => {
+          filteredGames = filteredGames.filter((g) => {
             const finalPrice = Number(g.final_price ?? g.price_final ?? g.price ?? 0);
             if (filters.minPrice !== '' && finalPrice < Number(filters.minPrice)) return false;
             if (filters.maxPrice !== '' && finalPrice > Number(filters.maxPrice)) return false;
             return true;
           });
         }
-
-        // Filter by platform if using genre/category endpoints
+        
+        // Filter by platform (if not already filtered server-side)
         if ((filters.genreId || filters.categoryId) && filters.platform) {
           filteredGames = filteredGames.filter((g) => {
             if (filters.platform === 'windows') return g.platforms_windows === true;
@@ -354,13 +430,39 @@ const Home = () => {
           });
         }
 
+        // Apply sorting (re-sort after filtering to ensure correct order)
+        filteredGames.sort((a, b) => {
+          const sortBy = filters.sortBy || 'name';
+          const order = filters.order || 'ASC';
+          let aVal = a[sortBy];
+          let bVal = b[sortBy];
+          
+          // Handle numeric sorting
+          if (sortBy === 'price_final' || sortBy === 'recommendations_total') {
+            aVal = Number(aVal) || 0;
+            bVal = Number(bVal) || 0;
+          }
+          
+          if (order === 'ASC') {
+            return aVal > bVal ? 1 : aVal < bVal ? -1 : 0;
+          } else {
+            return aVal < bVal ? 1 : aVal > bVal ? -1 : 0;
+          }
+        });
+
+        // Cache all filtered games
+        setAllFilteredGames(filteredGames);
+        
+        // Apply pagination client-side
+        const paginatedGames = filteredGames.slice(offset, offset + limit);
+        
         if (append) {
-          setCatalog((prev) => [...prev, ...filteredGames]);
+          setCatalog((prev) => [...prev, ...paginatedGames]);
         } else {
-          setCatalog(filteredGames);
+          setCatalog(paginatedGames);
         }
         
-        setHasMoreGames(filteredGames.length === limit);
+        setHasMoreGames(paginatedGames.length === limit && (offset + limit) < filteredGames.length);
         setCatalogOffset(offset);
       } catch (err) {
         const apiError =
@@ -383,6 +485,8 @@ const Home = () => {
       const badge = Number(g.discount_percent) > 0 ? 'hot' : 'cold';
       const releaseDate = formatDate(g.release_date || g.releaseDate || '');
       const ageLabel = g.required_age ? `${g.required_age}+` : '';
+      const appId = g.app_id || g.appId || g.id || `hero-${idx}`;
+      const id = g.id || g.appId || g.app_id || `hero-${idx}`;
       // Build meta badges with tone for colorful pills
       const metaBadges = [
         ...(releaseDate ? [{ text: releaseDate, tone: 'date' }] : []),
@@ -395,7 +499,8 @@ const Home = () => {
       if (ageLabel) metaString += (metaString ? ' · ' : '') + ageLabel;
 
       return {
-        id: g.id || g.appId || idx,
+        id,
+        appId,
         badge,
         badgeLabel: badge === 'hot' ? 'Hot' : 'Pick',
         title: g.title || g.name || 'Untitled',
@@ -413,22 +518,94 @@ const Home = () => {
     });
   };
 
+  const getBadgeStyle = (badgeText) => {
+    if (!badgeText) return styles.pill;
+    
+    const text = String(badgeText).trim();
+    
+    // Price badges (starts with $)
+    if (text.startsWith('$')) {
+      return {
+        ...styles.pill,
+        background: '#dcfce7',
+        color: '#166534',
+        fontWeight: 600,
+      };
+    }
+    
+    // Age rating badges (ends with +)
+    if (text.endsWith('+')) {
+      return {
+        ...styles.pill,
+        background: '#fef3c7',
+        color: '#92400e',
+        fontWeight: 600,
+      };
+    }
+    
+    // Date badges (contains - or looks like YYYY-MM-DD)
+    if (text.includes('-') || /^\d{4}/.test(text)) {
+      return {
+        ...styles.pill,
+        background: '#dbeafe',
+        color: '#1e40af',
+        fontWeight: 500,
+      };
+    }
+    
+    // Default
+    return styles.pill;
+  };
+
   const cardGrid = (items) => (
     <div style={styles.cardGrid}>
       {items.map((g) => (
-        <div key={g.id} style={styles.card}>
-          <div style={styles.cardImageWrap}>
-            <img src={g.image} alt={g.title} style={styles.cardImage} />
-          </div>
-          <div style={styles.cardBody}>
-            <div style={styles.pillRow}>
-              {g.metaBadges && g.metaBadges.length > 0 && g.metaBadges.map((p, i) => (
-                <span key={i} style={styles.pill}>{p}</span>
-              ))}
+        <Link
+          key={g.id || g.appId || `card-${g.title}`}
+          to={g.appId ? `/game/${g.appId}` : g.id ? `/game/${g.id}` : '#'}
+          style={styles.cardLink}
+        >
+          <div style={styles.card}>
+            <div style={styles.cardImageWrap}>
+              {g.appId && (
+                <button
+                  style={styles.heartButton}
+                  aria-label="toggle wishlist"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleToggleWishlist(g.appId);
+                  }}
+                >
+                  <span
+                    style={
+                      wishlistIds.has(String(g.appId)) || wishlistIds.has(Number(g.appId))
+                        ? styles.heartIconActive
+                        : styles.heartIcon
+                    }
+                  >
+                    ♥
+                  </span>
+                </button>
+              )}
+              <img src={g.image} alt={g.title} style={styles.cardImage} />
+              {g.hasDiscount && g.discountPrice && (
+                <div style={styles.cardBadge}>{g.discountPrice}</div>
+              )}
             </div>
-            <div style={styles.cardTitle}>{g.title}</div>
+            <div style={styles.cardBody}>
+              <div style={styles.cardTitle}>{g.title}</div>
+              <div style={styles.cardPriceRow}>
+                <span style={styles.priceCurrent}>
+                  {g.hasDiscount ? g.discountPrice : g.basePrice || g.originalPrice || '—'}
+                </span>
+                {g.hasDiscount && g.originalPrice && (
+                  <span style={styles.priceOriginal}>{g.originalPrice}</span>
+                )}
+              </div>
+            </div>
           </div>
-        </div>
+        </Link>
       ))}
     </div>
   );
@@ -459,22 +636,19 @@ const Home = () => {
   const catalogItemsFromData = () => {
     const list = Array.isArray(catalog) ? catalog : [];
     return list.map((g, idx) => {
-      const { discountPrice, originalPrice } = extractPrices(g);
-      const releaseDate = formatDate(g.release_date || g.releaseDate || '');
-      const ageLabel = g.required_age ? `${g.required_age}+` : '';
-
-      const metaBadges = [
-        ...(releaseDate ? [releaseDate] : []),
-        ...(ageLabel ? [ageLabel] : []),
-        ...(discountPrice ? [discountPrice] : originalPrice ? [originalPrice] : []),
-      ];
+      const { discountPrice, originalPrice, hasDiscount, base } = extractPrices(g);
+      const id = g.id || g.appId || g.app_id || `catalog-${idx}`;
+      const appId = g.app_id || g.appId || g.id;
 
       return {
-        id: g.id || g.appId || `catalog-${idx}`,
+        id,
+        appId,
         title: g.title || g.name || 'Untitled',
-        subtitle: g.genre || g.category || '',
         image: g.image || g.header_image || g.thumbnail || '',
-        metaBadges,
+        hasDiscount,
+        discountPrice,
+        originalPrice,
+        basePrice: base,
       };
     });
   };
@@ -490,6 +664,7 @@ const Home = () => {
     setHasInteracted(true);
     setCatalogOffset(0);
     setHasMoreGames(true);
+    setAllFilteredGames([]); // Clear cache when filters change
     setFilters((prev) => ({
       ...prev,
       [key]: value,
@@ -500,85 +675,21 @@ const Home = () => {
     if (catalogLoading || !hasMoreGames || isLoadingMore) return;
     const nextOffset = catalogOffset + 20;
     setIsLoadingMore(true);
-    const loadCatalog = async (offset = 0, append = false) => {
-      if (!append) setCatalogLoading(true);
-      setCatalogError('');
-      try {
-        const limit = 20;
-        let res;
-        
-        if (filters.genreId) {
-          const params = {
-            limit,
-            offset,
-            sortBy: filters.sortBy,
-            order: filters.order,
-          };
-          res = await gameService.getGamesByGenre(filters.genreId, params);
-        } else if (filters.categoryId) {
-          const params = {
-            limit,
-            offset,
-            sortBy: filters.sortBy,
-            order: filters.order,
-          };
-          res = await gameService.getGamesByCategory(filters.categoryId, params);
-        } else {
-          const params = {
-            limit,
-            offset,
-            sortBy: filters.sortBy,
-            order: filters.order,
-          };
-          if (filters.platform) params.platform = filters.platform;
-          if (filters.minPrice !== '') params.minPrice = Number(filters.minPrice);
-          if (filters.maxPrice !== '') params.maxPrice = Number(filters.maxPrice);
-          res = await gameService.getGames(params);
-        }
-
-        const games = normalizeGames(res);
-        
-        let filteredGames = games;
-        if ((filters.genreId || filters.categoryId) && (filters.minPrice !== '' || filters.maxPrice !== '')) {
-          filteredGames = games.filter((g) => {
-            const finalPrice = Number(g.final_price ?? g.price_final ?? g.price ?? 0);
-            if (filters.minPrice !== '' && finalPrice < Number(filters.minPrice)) return false;
-            if (filters.maxPrice !== '' && finalPrice > Number(filters.maxPrice)) return false;
-            return true;
-          });
-        }
-
-        if ((filters.genreId || filters.categoryId) && filters.platform) {
-          filteredGames = filteredGames.filter((g) => {
-            if (filters.platform === 'windows') return g.platforms_windows === true;
-            if (filters.platform === 'mac') return g.platforms_mac === true;
-            if (filters.platform === 'linux') return g.platforms_linux === true;
-            return true;
-          });
-        }
-
-        if (append) {
-          setCatalog((prev) => [...prev, ...filteredGames]);
-        } else {
-          setCatalog(filteredGames);
-        }
-        
-        setHasMoreGames(filteredGames.length === limit);
-        setCatalogOffset(offset);
-      } catch (err) {
-        const apiError =
-          err.response?.data?.error?.message ||
-          err.response?.data?.message ||
-          err.message;
-        setCatalogError(apiError || 'Unable to load games');
-        setHasMoreGames(false);
-      } finally {
-        if (!append) setCatalogLoading(false);
-        setIsLoadingMore(false);
-      }
-    };
-    loadCatalog(nextOffset, true);
-  }, [catalogLoading, hasMoreGames, catalogOffset, filters, isLoadingMore]);
+    
+    // Use cached filtered games for pagination
+    const limit = 20;
+    const paginatedGames = allFilteredGames.slice(nextOffset, nextOffset + limit);
+    
+    if (paginatedGames.length > 0) {
+      setCatalog((prev) => [...prev, ...paginatedGames]);
+      setHasMoreGames(nextOffset + limit < allFilteredGames.length);
+      setCatalogOffset(nextOffset);
+    } else {
+      setHasMoreGames(false);
+    }
+    
+    setIsLoadingMore(false);
+  }, [catalogLoading, hasMoreGames, catalogOffset, allFilteredGames, isLoadingMore]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -609,7 +720,14 @@ const Home = () => {
         </div>
         {gamesError && <div style={styles.error}>{gamesError}</div>}
         {gamesLoading && <div style={styles.badge}>Loading...</div>}
-        {heroItemsFromData().length > 0 && <HeroCarousel items={heroItemsFromData()} />}
+        {heroItemsFromData().length > 0 && (
+          <HeroCarousel
+            items={heroItemsFromData()}
+            onToggleWishlist={handleToggleWishlist}
+            wishlistIds={wishlistIds}
+            isAuthed={isAuthenticated}
+          />
+        )}
 
         {featured.length > 0 && (
           <section style={styles.featuredSection}>
@@ -617,28 +735,52 @@ const Home = () => {
             <div style={styles.featuredScroll}>
               {featured.slice(0, 12).map((g) => {
                 const { discountPrice, originalPrice, hasDiscount } = extractPrices(g);
+                const appId = g.app_id || g.appId || g.id;
                 return (
-                  <div key={g.id || g.appId} style={styles.featuredCard}>
-                    <div style={styles.featuredImageWrap}>
-                      <img
-                        src={g.image || g.header_image || g.thumbnail || ''}
-                        alt={g.title || g.name || 'Game'}
-                        style={styles.featuredImage}
-                      />
-                      {hasDiscount && discountPrice && (
-                        <div style={styles.priceBadge}>{discountPrice}</div>
-                      )}
+                  <Link key={appId || g.id || `feat-${g.title}`} to={appId ? `/game/${appId}` : '#'} style={styles.cardLink}>
+                    <div style={styles.featuredCard}>
+                      <div style={styles.featuredImageWrap}>
+                        {appId && (
+                          <button
+                            style={styles.heartButton}
+                            aria-label="toggle wishlist"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleToggleWishlist(appId);
+                            }}
+                          >
+                            <span
+                              style={
+                                wishlistIds.has(String(appId)) || wishlistIds.has(Number(appId))
+                                  ? styles.heartIconActive
+                                  : styles.heartIcon
+                              }
+                            >
+                              ♥
+                            </span>
+                          </button>
+                        )}
+                        <img
+                          src={g.image || g.header_image || g.thumbnail || ''}
+                          alt={g.title || g.name || 'Game'}
+                          style={styles.featuredImage}
+                        />
+                        {hasDiscount && discountPrice && (
+                          <div style={styles.priceBadge}>{discountPrice}</div>
+                        )}
+                      </div>
+                      <div style={styles.featuredCardBody}>
+                        <div style={styles.featuredCardTitle}>{g.title || g.name || 'Untitled'}</div>
+                        {!hasDiscount && originalPrice && (
+                          <div style={styles.featuredPrice}>{originalPrice}</div>
+                        )}
+                        {hasDiscount && originalPrice && (
+                          <div style={styles.featuredPriceStrikethrough}>{originalPrice}</div>
+                        )}
+                      </div>
                     </div>
-                    <div style={styles.featuredCardBody}>
-                      <div style={styles.featuredCardTitle}>{g.title || g.name || 'Untitled'}</div>
-                      {!hasDiscount && originalPrice && (
-                        <div style={styles.featuredPrice}>{originalPrice}</div>
-                      )}
-                      {hasDiscount && originalPrice && (
-                        <div style={styles.featuredPriceStrikethrough}>{originalPrice}</div>
-                      )}
-                    </div>
-                  </div>
+                  </Link>
                 );
               })}
             </div>
@@ -743,6 +885,7 @@ const Home = () => {
                         setHasInteracted(true);
                         setCatalogOffset(0);
                         setHasMoreGames(true);
+                        setAllFilteredGames([]);
                         setFilters({
                           sortBy: 'price_final',
                           order: 'ASC',
@@ -764,6 +907,7 @@ const Home = () => {
                         setHasInteracted(true);
                         setCatalogOffset(0);
                         setHasMoreGames(true);
+                        setAllFilteredGames([]);
                         setFilters((prev) => ({
                           ...prev,
                           sortBy: 'price_final',
@@ -874,18 +1018,23 @@ const styles = {
   /* card styles (used by cardGrid) */
   cardGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))',
-    gap: '12px',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+    gap: '14px',
+  },
+  cardLink: {
+    textDecoration: 'none',
+    color: 'inherit',
   },
   card: {
     background: '#fff',
     borderRadius: '12px',
     overflow: 'hidden',
-    boxShadow: '0 6px 18px rgba(17,24,39,0.06)',
+    boxShadow: '0 6px 18px rgba(17,24,39,0.08)',
   },
   cardImageWrap: {
+    position: 'relative',
     width: '100%',
-    height: '120px',
+    height: '140px',
     overflow: 'hidden',
   },
   cardImage: {
@@ -895,25 +1044,68 @@ const styles = {
     display: 'block',
   },
   cardBody: {
-    padding: '10px',
-  },
-  pillRow: {
-    display: 'flex',
-    gap: '8px',
-    marginBottom: '8px',
-    flexWrap: 'wrap',
-  },
-  pill: {
-    background: '#f1f5f9',
-    padding: '4px 8px',
-    borderRadius: '999px',
-    fontSize: '12px',
-    color: '#475569',
+    padding: '12px',
   },
   cardTitle: {
     fontWeight: 600,
-    fontSize: '14px',
+    fontSize: '15px',
     color: '#0f172a',
+    marginBottom: '6px',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+  },
+  cardPriceRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+  },
+  priceCurrent: {
+    color: '#059669',
+    fontWeight: 700,
+    fontSize: '14px',
+  },
+  priceOriginal: {
+    color: '#9ca3af',
+    textDecoration: 'line-through',
+    fontSize: '13px',
+    fontWeight: 400,
+  },
+  cardBadge: {
+    position: 'absolute',
+    top: '10px',
+    right: '10px',
+    background: '#ef4444',
+    color: '#fff',
+    padding: '6px 10px',
+    borderRadius: '6px',
+    fontSize: '13px',
+    fontWeight: 700,
+    boxShadow: '0 4px 12px rgba(239,68,68,0.25)',
+  },
+  heartButton: {
+    position: 'absolute',
+    top: '12px',
+    left: '10px',
+    background: 'rgba(255,255,255,0.95)',
+    border: '1px solid #e5e7eb',
+    borderRadius: '50%',
+    width: '36px',
+    height: '36px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: 'pointer',
+    zIndex: 3,
+    boxShadow: '0 10px 20px rgba(17,24,39,0.12)',
+  },
+  heartIcon: {
+    color: '#9ca3af',
+    fontSize: '18px',
+  },
+  heartIconActive: {
+    color: '#ef4444',
+    fontSize: '18px',
   },
   catalogSection: {
     marginTop: '26px',
@@ -1143,8 +1335,8 @@ const styles = {
   },
   featuredPrice: {
     fontSize: '12px',
-    color: '#6b7280',
-    fontWeight: 500,
+    color: '#059669',
+    fontWeight: 700,
   },
   featuredPriceStrikethrough: {
     fontSize: '11px',

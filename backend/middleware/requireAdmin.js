@@ -4,30 +4,51 @@ const { sendError } = require('../utils/response');
 
 /**
  * Middleware để kiểm tra và chỉ cho phép người dùng có vai trò 'admin' truy cập.
- *
- * Lưu ý: Middleware này giả định rằng
- * 1. Đã có một middleware xác thực (ví dụ: requireAuth) chạy trước đó
- * để đảm bảo req.user hoặc req.session.user tồn tại và đã được xác thực.
- * 2. Thông tin người dùng bao gồm trường 'role'.
+ * Handles session-based authentication and checks for admin role.
  */
-const requireAdmin = (req, res, next) => {
-  let user = req.user || req.session.user;
+const requireAdmin = async (req, res, next) => {
+  try {
+    let user = req.user || req.session.user;
+    
+    // If no user in current session but we have X-Session-ID header, try to load that session
+    if (!user && req.headers['x-session-id']) {
+      try {
+        const sessionStore = req.sessionStore;
+        const sessionData = await new Promise((resolve, reject) => {
+          sessionStore.get(req.headers['x-session-id'], (err, session) => {
+            if (err) reject(err);
+            else resolve(session);
+          });
+        });
+        
+        if (sessionData && sessionData.user) {
+          user = sessionData.user;
+          // Update current session with the user data
+          req.session.user = user;
+          req.user = user;
+        }
+      } catch (error) {
+        // Session not found or expired
+      }
+    }
 
-  // 1. Kiểm tra xem người dùng đã đăng nhập chưa
-  if (!user) {
-    // Nếu chưa đăng nhập, trả về lỗi 401 (Unauthenticated)
-    return sendError(res, 'Authentication required to access this resource', 'UNAUTHENTICATED', 401);
+    // 1. Kiểm tra xem người dùng đã đăng nhập chưa
+    if (!user) {
+      return sendError(res, 'Authentication required to access this resource', 'UNAUTHENTICATED', 401);
+    }
+
+    // 2. Kiểm tra vai trò (role) của người dùng
+    // Vai trò được định nghĩa trong ENUM user_role: 'user' hoặc 'admin'
+    if (user.role !== 'admin') {
+      return sendError(res, 'Access denied: Insufficient privileges (Admin role required)', 'ACCESS_DENIED', 403);
+    }
+
+    // 3. Nếu là admin, cho phép tiếp tục
+    next();
+  } catch (error) {
+    console.error('requireAdmin middleware error:', error);
+    return sendError(res, 'Authentication error', 'AUTH_ERROR', 500);
   }
-
-  // 2. Kiểm tra vai trò (role) của người dùng
-  // Vai trò được định nghĩa trong ENUM user_role: 'user' hoặc 'admin'
-  if (user.role !== 'admin') {
-    // Nếu role không phải là 'admin', trả về lỗi 403 (Forbidden)
-    return sendError(res, 'Access denied: Insufficient privileges (Admin role required)', 'ACCESS_DENIED', 403);
-  }
-
-  // 3. Nếu là admin, cho phép tiếp tục
-  next();
 };
 
 module.exports = requireAdmin;

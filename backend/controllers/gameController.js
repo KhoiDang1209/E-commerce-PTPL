@@ -75,13 +75,14 @@ const getRecommendedGames = async (req, res) => {
  */
 const getGames = async (req, res) => {
   try {
-    const { limit = 20, offset = 0, sortBy = 'recommendations_total', order = 'DESC', platform, minPrice, maxPrice, hasDiscount } = req.query;
+    const { limit = 20, offset = 0, sortBy = 'recommendations_total', order = 'DESC', platform, minPrice, maxPrice, hasDiscount, languageId } = req.query;
     
     const filters = {};
     if (platform) filters.platform = platform;
     if (minPrice) filters.minPrice = parseFloat(minPrice);
     if (maxPrice) filters.maxPrice = parseFloat(maxPrice);
     if (hasDiscount === 'true') filters.hasDiscount = true;
+    if (languageId) filters.languageId = languageId;
 
     const games = await queries.games.getGamesByFilter(filters, {
       limit: parseInt(limit, 10),
@@ -120,19 +121,7 @@ const getGameById = async (req, res) => {
       return sendError(res, 'Game not found', 'NOT_FOUND', 404);
     }
 
-    // Get related data (genres, categories)
-    const [genres, categories] = await Promise.all([
-      queries.genres.getGenresByGame(appId),
-      queries.categories.getCategoriesByGame(appId)
-    ]);
-
-    return sendSuccess(res, {
-      game: {
-        ...game,
-        genres,
-        categories
-      }
-    }, 'Game details retrieved successfully');
+    return sendSuccess(res, { game }, 'Game details retrieved successfully');
 
   } catch (error) {
     console.error('Get game error:', error);
@@ -208,13 +197,14 @@ const getGamesByGenre = async (req, res) => {
       return sendError(res, 'Invalid genre ID', 'VALIDATION_ERROR', 400);
     }
 
-    const { limit = 20, offset = 0, sortBy = 'recommendations_total', order = 'DESC' } = req.query;
+    const { limit = 20, offset = 0, sortBy = 'recommendations_total', order = 'DESC', languageId } = req.query;
 
     const games = await queries.games.getGamesByGenre(genreId, {
       limit: parseInt(limit, 10),
       offset: parseInt(offset, 10),
       sortBy,
-      order: order.toUpperCase()
+      order: order.toUpperCase(),
+      languageId: languageId || undefined
     });
 
     return sendSuccess(res, {
@@ -242,13 +232,14 @@ const getGamesByCategory = async (req, res) => {
       return sendError(res, 'Invalid category ID', 'VALIDATION_ERROR', 400);
     }
 
-    const { limit = 20, offset = 0, sortBy = 'recommendations_total', order = 'DESC' } = req.query;
+    const { limit = 20, offset = 0, sortBy = 'recommendations_total', order = 'DESC', languageId } = req.query;
 
     const games = await queries.games.getGamesByCategory(categoryId, {
       limit: parseInt(limit, 10),
       offset: parseInt(offset, 10),
       sortBy,
-      order: order.toUpperCase()
+      order: order.toUpperCase(),
+      languageId: languageId || undefined
     });
 
     return sendSuccess(res, {
