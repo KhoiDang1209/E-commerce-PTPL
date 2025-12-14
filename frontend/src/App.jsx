@@ -5,7 +5,6 @@ import { CartProvider } from './context/CartContext';
 import { WishlistProvider } from './context/WishlistContext';
 
 import Home from './pages/Home';
-import Games from './pages/Games';
 import GameDetail from './pages/GameDetail';
 import Cart from './pages/Cart';
 import Wishlist from './pages/Wishlist';
@@ -14,6 +13,8 @@ import Register from './pages/Register';
 import Profile from './pages/Profile';
 import Checkout from './pages/Checkout';
 import AdminDashboard from './pages/Admin/Dashboard';
+import SearchGames from './pages/SearchGames';
+import Library from './pages/Library';
 
 import PrivateRoute from './components/common/PrivateRoute';
 
@@ -25,8 +26,8 @@ function App() {
           <Router>
             <Routes>
               <Route path="/" element={<Home />} />
-              <Route path="/games" element={<Games />} />
               <Route path="/game/:appId" element={<GameDetail />} />
+              <Route path="/search" element={<SearchGames />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route
@@ -42,6 +43,14 @@ function App() {
                 element={
                   <PrivateRoute>
                     <Wishlist />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/library"
+                element={
+                  <PrivateRoute>
+                    <Library />
                   </PrivateRoute>
                 }
               />

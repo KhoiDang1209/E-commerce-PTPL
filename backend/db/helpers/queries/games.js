@@ -207,6 +207,47 @@ const gamesQueries = {
    * @param {Object} options - Query options
    * @returns {Promise<Array>} Array of games
    */
+  /**
+   * Fast autocomplete search - optimized for dropdown suggestions
+   * Uses simple ILIKE matching on game names only (much faster than full-text search)
+   */
+  searchGamesAutocomplete: async (searchTerm, options = {}) => {
+    const { limit = 5, offset = 0 } = options;
+    const paginationClause = buildPaginationClause(limit, offset);
+    const searchPattern = `%${searchTerm}%`;
+
+    // Fast query: only search game names with ILIKE, minimal joins
+    const queryText = `
+      SELECT 
+        g.*,
+        gd.header_image,
+        gd.background
+      FROM games g
+      LEFT JOIN game_descriptions gd ON g.app_id = gd.app_id
+      WHERE g.name ILIKE $1
+      ORDER BY 
+        CASE 
+          WHEN g.name ILIKE $2 THEN 1
+          WHEN g.name ILIKE $3 THEN 2
+          ELSE 3
+        END,
+        g.name ASC
+      ${paginationClause}
+    `.trim();
+
+    // $1: %term% (contains)
+    // $2: term% (starts with - highest priority)
+    // $3: %term (ends with - medium priority)
+    const startsWithPattern = `${searchTerm}%`;
+    const endsWithPattern = `%${searchTerm}`;
+
+    return await query(queryText, [searchPattern, startsWithPattern, endsWithPattern]);
+  },
+
+  /**
+   * Full-text search - for detailed search results page
+   * Uses PostgreSQL full-text search with relevance ranking
+   */
   searchGames: async (searchTerm, options = {}) => {
     const { limit, offset, sortBy, order } = options;
     const paginationClause = buildPaginationClause(limit, offset);

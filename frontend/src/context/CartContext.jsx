@@ -32,7 +32,8 @@ export const CartProvider = ({ children }) => {
     try {
       setLoading(true);
       const response = await cartService.getCart();
-      setCart(response.data || []);
+      // API returns { data: { cart: {...} } }
+      setCart(response.data || {});
     } catch (error) {
       console.error('Error fetching cart:', error);
     } finally {

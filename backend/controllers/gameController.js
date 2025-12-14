@@ -130,7 +130,36 @@ const getGameById = async (req, res) => {
 };
 
 /**
- * Search games
+ * Fast autocomplete search for dropdown suggestions
+ * GET /api/games/search/autocomplete?q=...
+ */
+const searchGamesAutocomplete = async (req, res) => {
+  try {
+    const { q, limit = 5 } = req.query;
+
+    if (!q || q.trim() === '') {
+      return sendSuccess(res, { games: [] }, 'Autocomplete results');
+    }
+
+    const games = await queries.games.searchGamesAutocomplete(q.trim(), {
+      limit: parseInt(limit, 10),
+      offset: 0
+    });
+
+    return sendSuccess(res, {
+      games,
+      count: games.length,
+      query: q.trim()
+    }, 'Autocomplete results retrieved successfully');
+
+  } catch (error) {
+    console.error('Autocomplete search error:', error);
+    return sendError(res, 'Internal server error', 'INTERNAL_ERROR', 500);
+  }
+};
+
+/**
+ * Search games (full-text search for search page)
  * GET /api/games/search?q=...
  */
 const searchGames = async (req, res) => {
@@ -312,6 +341,7 @@ const getNewestGames = async (req, res) => {
 };
 
 module.exports = {
+  searchGamesAutocomplete,
   getRecommendedGames,
   getGames,
   getGameById,

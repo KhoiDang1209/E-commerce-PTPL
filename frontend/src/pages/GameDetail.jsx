@@ -1,13 +1,22 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import Navbar from '../components/layout/Navbar';
 import { gameService } from '../services/gameService';
+import { useCart } from '../context/CartContext';
+import { useWishlist } from '../context/WishlistContext';
+import { useAuth } from '../context/AuthContext';
 
 const GameDetail = () => {
   const { appId } = useParams();
+  const navigate = useNavigate();
   const [game, setGame] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [cartMessage, setCartMessage] = useState('');
+  const [wishlistMessage, setWishlistMessage] = useState('');
+  const { addToCart } = useCart();
+  const { wishlist, addToWishlist, removeFromWishlist } = useWishlist();
+  const { isAuthenticated } = useAuth();
 
   const formatPrice = (val) => {
     if (val === null || val === undefined || val === '') return '';
@@ -136,6 +145,62 @@ const GameDetail = () => {
   const [showAllCategories, setShowAllCategories] = useState(false);
   const [showAllLanguages, setShowAllLanguages] = useState(false);
 
+  const isInWishlist = useMemo(() => {
+    if (!game || !wishlist) return false;
+    return wishlist.some(item => item.app_id === game.app_id || item.appId === game.app_id);
+  }, [game, wishlist]);
+
+  const handleAddToCart = async () => {
+    if (!isAuthenticated) {
+      navigate('/login');
+      return;
+    }
+
+    if (!game?.app_id) {
+      setCartMessage('Error: Game information not available');
+      setTimeout(() => setCartMessage(''), 3000);
+      return;
+    }
+
+    try {
+      setCartMessage('');
+      await addToCart(game.app_id);
+      setCartMessage('Added to cart!');
+      setTimeout(() => setCartMessage(''), 3000);
+    } catch (err) {
+      const errorMsg = err.response?.data?.error?.message || err.message || 'Failed to add to cart';
+      setCartMessage(errorMsg);
+      setTimeout(() => setCartMessage(''), 5000);
+    }
+  };
+
+  const handleWishlistToggle = async () => {
+    if (!isAuthenticated) {
+      navigate('/login');
+      return;
+    }
+
+    if (!game?.app_id) {
+      return;
+    }
+
+    try {
+      setWishlistMessage('');
+      if (isInWishlist) {
+        await removeFromWishlist(game.app_id);
+        setWishlistMessage('Removed from wishlist');
+      } else {
+        await addToWishlist(game);
+        setWishlistMessage('Added to wishlist!');
+      }
+      setTimeout(() => setWishlistMessage(''), 3000);
+    } catch (err) {
+      const errorMsg = err.response?.data?.error?.message || err.message || 'Failed to update wishlist';
+      setWishlistMessage(errorMsg);
+      setTimeout(() => setWishlistMessage(''), 5000);
+    }
+  };
+
   const previewDescription = useMemo(() => {
     if (!description) return '';
     if (showFullDescription) return description;
@@ -204,8 +269,28 @@ const GameDetail = () => {
                   </div>
 
                   <div style={styles.ctaGroup}>
-                    <button style={styles.ctaPrimary}>Add to Cart</button>
-                    <button style={styles.ctaSecondary}>Wishlist</button>
+                    <button 
+                      style={styles.ctaPrimary}
+                      onClick={handleAddToCart}
+                    >
+                      Add to Cart
+                    </button>
+                    {cartMessage && (
+                      <div style={cartMessage.includes('Error') || cartMessage.includes('Failed') ? styles.errorMessage : styles.successMessage}>
+                        {cartMessage}
+                      </div>
+                    )}
+                    <button 
+                      style={styles.ctaSecondary}
+                      onClick={handleWishlistToggle}
+                    >
+                      {isInWishlist ? '❤️ Remove from Wishlist' : '🤍 Add to Wishlist'}
+                    </button>
+                    {wishlistMessage && (
+                      <div style={wishlistMessage.includes('Error') || wishlistMessage.includes('Failed') ? styles.errorMessage : styles.successMessage}>
+                        {wishlistMessage}
+                      </div>
+                    )}
                   </div>
 
                   <div style={styles.quickInfo}>
@@ -635,5 +720,25 @@ const styles = {
   specValue: {
     color: '#0f172a',
     textAlign: 'right',
+  },
+  successMessage: {
+    fontSize: '13px',
+    padding: '8px',
+    borderRadius: '6px',
+    textAlign: 'center',
+    marginTop: '4px',
+    background: '#dcfce7',
+    color: '#166534',
+    fontWeight: '600',
+  },
+  errorMessage: {
+    fontSize: '13px',
+    padding: '8px',
+    borderRadius: '6px',
+    textAlign: 'center',
+    marginTop: '4px',
+    background: '#fee2e2',
+    color: '#dc2626',
+    fontWeight: '600',
   },
 };

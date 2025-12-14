@@ -9,6 +9,7 @@ router.get('/recommended', gameController.getRecommendedGames); // Optional auth
 router.get('/featured', gameController.getFeaturedGames);
 router.get('/discounted', gameController.getDiscountedGames);
 router.get('/newest', gameController.getNewestGames);
+router.get('/search/autocomplete', gameController.searchGamesAutocomplete);
 router.get('/search', gameController.searchGames);
 router.get('/genre/:genreId', gameController.getGamesByGenre);
 router.get('/category/:categoryId', gameController.getGamesByCategory);

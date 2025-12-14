@@ -11,10 +11,25 @@ export const gameService = {
     return response.data;
   },
 
-  searchGames: async (query, params = {}) => {
-    const response = await api.get('/games/search', {
+  searchGamesAutocomplete: async (query, params = {}, signal = null) => {
+    const config = {
       params: { q: query, ...params },
-    });
+    };
+    if (signal) {
+      config.signal = signal;
+    }
+    const response = await api.get('/games/search/autocomplete', config);
+    return response.data;
+  },
+
+  searchGames: async (query, params = {}, signal = null) => {
+    const config = {
+      params: { q: query, ...params },
+    };
+    if (signal) {
+      config.signal = signal;
+    }
+    const response = await api.get('/games/search', config);
     return response.data;
   },
 
