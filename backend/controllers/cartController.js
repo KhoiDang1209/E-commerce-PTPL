@@ -169,11 +169,113 @@ const getCartCount = async (req, res) => {
   }
 };
 
+/**
+ * Validate coupon and calculate discount (without creating order)
+ * POST /api/cart/validate-coupon
+ */
+const validateCoupon = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { couponCode, subtotal } = req.body || {};
+
+    if (!couponCode || !couponCode.trim()) {
+      return sendSuccess(res, { valid: false, discount: 0, message: 'No coupon code provided' }, 'Coupon validation');
+    }
+
+    const code = couponCode.trim().toUpperCase();
+    const subtotalNum = parseFloat(subtotal) || 0;
+
+    if (subtotalNum <= 0) {
+      return sendSuccess(res, { valid: false, discount: 0, message: 'Subtotal must be greater than 0' }, 'Coupon validation');
+    }
+
+    // Get coupon by code (case-insensitive)
+    const coupon = await queries.coupons.getCouponByCode(code);
+    if (!coupon) {
+      return sendSuccess(res, { valid: false, discount: 0, message: 'Invalid coupon code' }, 'Coupon validation');
+    }
+
+    // Check if user already used this coupon
+    const hasUsed = await queries.coupons.hasUserUsedCoupon(userId, coupon.id);
+    if (hasUsed) {
+      return sendSuccess(res, { valid: false, discount: 0, message: 'Coupon already used' }, 'Coupon validation');
+    }
+
+    // Calculate discount
+    let discount = queries.coupons.calculateDiscount(coupon, subtotalNum);
+    if (discount < 0) discount = 0;
+    if (discount > subtotalNum) discount = subtotalNum;
+
+    return sendSuccess(
+      res,
+      {
+        valid: true,
+        discount,
+        couponCode: coupon.code,
+        discountType: coupon.discount_type,
+        discountValue: coupon.value,
+      },
+      'Coupon validated successfully'
+    );
+  } catch (error) {
+    console.error('Validate coupon error:', error);
+    return sendError(res, 'Internal server error', 'INTERNAL_ERROR', 500);
+  }
+};
+
+/**
+ * Checkout: create order from current cart (with optional coupon)
+ * POST /api/cart/checkout
+ * Creates a pending order (payment not captured here).
+ */
+const checkout = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { couponCode, billingAddressId } = req.body || {};
+
+    try {
+      // Create order as pending; payment creation now handled separately.
+      const order = await queries.orders.createOrderFromCart(userId, {
+        discount_code: couponCode || null,
+        billing_address_id: billingAddressId || null,
+        order_status: 'pending',
+      });
+
+      // Fetch order with items for confirmation payload
+      const orderWithItems = await queries.orders.getOrderWithItems(order.id);
+
+      return sendSuccess(
+        res,
+        { order: orderWithItems },
+        'Order created (pending) from cart'
+      );
+    } catch (err) {
+      if (err.message === 'Cart not found' || err.message === 'Cart is empty') {
+        return sendError(res, 'Your cart is empty', 'CART_EMPTY', 400);
+      }
+      if (err.message === 'INVALID_COUPON') {
+        return sendError(res, 'Invalid coupon code', 'INVALID_COUPON', 400);
+      }
+      if (err.message === 'COUPON_ALREADY_USED') {
+        return sendError(res, 'Coupon already used', 'COUPON_ALREADY_USED', 400);
+      }
+
+      console.error('Checkout createOrderFromCart error:', err);
+      return sendError(res, 'Internal server error', 'INTERNAL_ERROR', 500);
+    }
+  } catch (error) {
+    console.error('Checkout error:', error);
+    return sendError(res, 'Internal server error', 'INTERNAL_ERROR', 500);
+  }
+};
+
 module.exports = {
   getCart,
   addToCart,
   removeFromCart,
   clearCart,
   getCartCount,
+  validateCoupon,
+  checkout,
 };
 

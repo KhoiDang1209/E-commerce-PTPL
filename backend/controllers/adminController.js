@@ -104,7 +104,146 @@ module.exports = {
     console.error('Get recent orders error:', error);
     return sendError(res, 'Failed to load recent orders', 'INTERNAL_ERROR', 500);
   }
-}
+  },
 
+  /**
+   * Get all orders (for admin)
+   * GET /api/admin/orders
+   */
+  getAllOrders: async (req, res) => {
+    try {
+      const { limit, offset, sortBy, order } = req.query;
+      const options = {
+        limit: limit ? parseInt(limit, 10) : undefined,
+        offset: offset ? parseInt(offset, 10) : undefined,
+        sortBy: sortBy || 'created_at',
+        order: order || 'DESC',
+      };
+      const orders = await queries.orders.getAllOrders(options);
+      return sendSuccess(res, { orders }, 'All orders retrieved successfully');
+    } catch (error) {
+      console.error('Get all orders error:', error);
+      return sendError(res, 'Failed to load orders', 'INTERNAL_ERROR', 500);
+    }
+  },
+
+  /**
+   * Get pending payments (for admin)
+   * GET /api/admin/payments/pending
+   */
+  getPendingPayments: async (req, res) => {
+    try {
+      const { limit, offset, sortBy, order } = req.query;
+      const options = {
+        limit: limit ? parseInt(limit, 10) : undefined,
+        offset: offset ? parseInt(offset, 10) : undefined,
+        sortBy: sortBy || 'payment_created',
+        order: order || 'DESC',
+      };
+      const payments = await queries.payments.getPendingPayments(options);
+      return sendSuccess(res, { payments }, 'Pending payments retrieved successfully');
+    } catch (error) {
+      console.error('Get pending payments error:', error);
+      return sendError(res, 'Failed to load pending payments', 'INTERNAL_ERROR', 500);
+    }
+  },
+
+  /**
+   * Get all users (for admin)
+   * GET /api/admin/users
+   */
+  getAllUsers: async (req, res) => {
+    try {
+      const { limit, offset, sortBy, order } = req.query;
+      const options = {
+        limit: limit ? parseInt(limit, 10) : undefined,
+        offset: offset ? parseInt(offset, 10) : undefined,
+        sortBy: sortBy || 'created_at',
+        order: order || 'DESC',
+      };
+      const users = await queries.users.getAllUsers(options);
+      return sendSuccess(res, { users }, 'All users retrieved successfully');
+    } catch (error) {
+      console.error('Get all users error:', error);
+      return sendError(res, 'Failed to load users', 'INTERNAL_ERROR', 500);
+    }
+  },
+
+  /**
+   * Get all games (for admin)
+   * GET /api/admin/games
+   */
+  getAllGames: async (req, res) => {
+    try {
+      const { limit, offset, sortBy, order } = req.query;
+      const options = {
+        limit: limit ? parseInt(limit, 10) : undefined,
+        offset: offset ? parseInt(offset, 10) : undefined,
+        sortBy: sortBy || 'name',
+        order: order || 'ASC',
+      };
+      const games = await queries.games.getAllGames(options);
+      return sendSuccess(res, { games }, 'All games retrieved successfully');
+    } catch (error) {
+      console.error('Get all games error:', error);
+      return sendError(res, 'Failed to load games', 'INTERNAL_ERROR', 500);
+    }
+  },
+
+  /**
+   * Update payment status (and corresponding order status)
+   * PUT /api/admin/payments/:id/status
+   */
+  updatePaymentStatus: async (req, res) => {
+    try {
+      const paymentId = parseInt(req.params.id, 10);
+      const { payment_status } = req.body;
+
+      if (Number.isNaN(paymentId)) {
+        return sendError(res, 'Invalid payment ID', 'VALIDATION_ERROR', 400);
+      }
+
+      // Validate payment status
+      const validStatuses = ['initiated', 'authorized', 'captured', 'failed', 'refunded', 'canceled'];
+      if (!payment_status || !validStatuses.includes(payment_status)) {
+        return sendError(res, 'Invalid payment status', 'VALIDATION_ERROR', 400);
+      }
+
+      // Get payment to find order_id
+      const payment = await queries.payments.getPaymentById(paymentId);
+      if (!payment) {
+        return sendError(res, 'Payment not found', 'NOT_FOUND', 404);
+      }
+
+      // Map payment status to order status
+      const orderStatusMap = {
+        'authorized': 'paid',
+        'captured': 'paid',
+        'canceled': 'canceled',
+        'failed': 'failed',
+        'refunded': 'refunded',
+        'initiated': 'pending', // Keep order as pending
+      };
+
+      const newOrderStatus = orderStatusMap[payment_status];
+
+      // Update payment and order status in a transaction
+      const updatedPayment = await queries.payments.updatePaymentAndOrderStatus(
+        paymentId,
+        payment_status,
+        payment.order_id,
+        newOrderStatus && newOrderStatus !== 'pending' ? newOrderStatus : null
+      );
+
+      return sendSuccess(
+        res,
+        { payment: updatedPayment },
+        'Payment status updated successfully'
+      );
+    } catch (error) {
+      console.error('Update payment status error:', error);
+      return sendError(res, 'Failed to update payment status', 'INTERNAL_ERROR', 500);
+    }
+  },
 
 };

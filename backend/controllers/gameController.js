@@ -77,12 +77,20 @@ const getGames = async (req, res) => {
   try {
     const { limit = 20, offset = 0, sortBy = 'recommendations_total', order = 'DESC', platform, minPrice, maxPrice, hasDiscount, languageId } = req.query;
     
+    let userId = null;
+    if (req.session && req.session.user) {
+      userId = req.session.user.id;
+    } else if (req.user) {
+      userId = req.user.id;
+    }
+
     const filters = {};
     if (platform) filters.platform = platform;
     if (minPrice) filters.minPrice = parseFloat(minPrice);
     if (maxPrice) filters.maxPrice = parseFloat(maxPrice);
     if (hasDiscount === 'true') filters.hasDiscount = true;
     if (languageId) filters.languageId = languageId;
+    if (userId) filters.excludeOwnedUserId = userId;
 
     const games = await queries.games.getGamesByFilter(filters, {
       limit: parseInt(limit, 10),
@@ -200,11 +208,19 @@ const getFeaturedGames = async (req, res) => {
   try {
     const { limit = 10 } = req.query;
 
+    let userId = null;
+    if (req.session && req.session.user) {
+      userId = req.session.user.id;
+    } else if (req.user) {
+      userId = req.user.id;
+    }
+
     const games = await queries.games.getAllGames({
       limit: parseInt(limit, 10),
       offset: 0,
       sortBy: 'recommendations_total',
-      order: 'DESC'
+      order: 'DESC',
+      excludeOwnedUserId: userId || undefined,
     });
 
     return sendSuccess(res, { games }, 'Featured games retrieved successfully');
@@ -228,12 +244,20 @@ const getGamesByGenre = async (req, res) => {
 
     const { limit = 20, offset = 0, sortBy = 'recommendations_total', order = 'DESC', languageId } = req.query;
 
+    let userId = null;
+    if (req.session && req.session.user) {
+      userId = req.session.user.id;
+    } else if (req.user) {
+      userId = req.user.id;
+    }
+
     const games = await queries.games.getGamesByGenre(genreId, {
       limit: parseInt(limit, 10),
       offset: parseInt(offset, 10),
       sortBy,
       order: order.toUpperCase(),
-      languageId: languageId || undefined
+      languageId: languageId || undefined,
+      excludeOwnedUserId: userId || undefined,
     });
 
     return sendSuccess(res, {
@@ -263,12 +287,20 @@ const getGamesByCategory = async (req, res) => {
 
     const { limit = 20, offset = 0, sortBy = 'recommendations_total', order = 'DESC', languageId } = req.query;
 
+    let userId = null;
+    if (req.session && req.session.user) {
+      userId = req.session.user.id;
+    } else if (req.user) {
+      userId = req.user.id;
+    }
+
     const games = await queries.games.getGamesByCategory(categoryId, {
       limit: parseInt(limit, 10),
       offset: parseInt(offset, 10),
       sortBy,
       order: order.toUpperCase(),
-      languageId: languageId || undefined
+      languageId: languageId || undefined,
+      excludeOwnedUserId: userId || undefined,
     });
 
     return sendSuccess(res, {

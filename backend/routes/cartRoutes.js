@@ -14,6 +14,8 @@ router.get('/count', cartController.getCartCount);
 router.post('/items', cartController.addToCart);
 router.delete('/items/:appId', cartController.removeFromCart);
 router.delete('/', cartController.clearCart);
+router.post('/validate-coupon', cartController.validateCoupon);
+router.post('/checkout', cartController.checkout);
 
 module.exports = router;
 

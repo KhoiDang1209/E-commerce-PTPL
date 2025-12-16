@@ -24,7 +24,7 @@ const ActionBox = ({ title, actions, navigate }) => (
 );
 
 const AdminDashboard = () => {
-  
+  const navigate = useNavigate();
   // Khởi tạo state với giá trị mặc định '—'
   const [stats, setStats] = useState({ orders: '—', users: '—', games: '—' });
   const [loading, setLoading] = useState(true);
@@ -108,9 +108,10 @@ const AdminDashboard = () => {
                     <ActionBox
                         title="📋 Order Control"
                         actions={[
-                            { icon: "📦", label: "View All Orders"  /*, path: "/admin/orders" */},
-                            { icon: "🔄", label: "Pending Payments"  /*, path: "/admin/orders?status=pending" */},
+                            { icon: "📦", label: "View All Orders", path: "/admin/orders"},
+                            { icon: "🔄", label: "Pending Payments", path: "/admin/payments/pending"},
                         ]}
+                        navigate={navigate}
                     />
                     <ActionBox
                         title="🧑‍💻 User Control"
@@ -118,6 +119,7 @@ const AdminDashboard = () => {
                             { icon: "👥", label: "Manage User Accounts"  /*, path: "/admin/users" */},
                             { icon: "💬", label: "Manage Reviews"      /*, path: "/admin/reviews" */},
                         ]}
+                        navigate={navigate}
                     />
                     <ActionBox
                         title="🎮 Game Management"
@@ -125,6 +127,7 @@ const AdminDashboard = () => {
                             { icon: "✨", label: "Add New Game"  /*, path: "/admin/games/new"*/ },
                             { icon: "📝", label: "Manage Game List"/*, path: "/admin/games" */},
                         ]}
+                        navigate={navigate}
                     />
                 </div>
 

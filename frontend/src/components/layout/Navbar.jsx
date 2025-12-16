@@ -6,9 +6,10 @@ import { gameService } from '../../services/gameService';
 import './Navbar.css';
 
 const Navbar = () => {
-  const { isAuthenticated, logout, loading } = useAuth();
+  const { isAuthenticated, logout, loading, user } = useAuth();
   const { cartCount } = useCart();
   const navigate = useNavigate();
+  const isAdmin = user?.role === 'admin';
   const [searchQuery, setSearchQuery] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
   const [suggestedGames, setSuggestedGames] = useState([]);
@@ -189,12 +190,20 @@ const Navbar = () => {
 
   return (
     <header className="nav">
-      <div className="nav__logo" onClick={() => navigate('/')}>GameHub</div>
+      <div className="nav__logo" onClick={() => navigate(isAdmin ? '/admin' : '/')}>GameHub</div>
 
       <nav className="nav__links">
-        <button className="nav__link" onClick={() => navigate('/')}>Store</button>
-        <button className="nav__link" onClick={() => navigate('/library')}>Library</button>
-        <div className="nav__search-wrapper" ref={searchRef}>
+        {isAdmin ? (
+          <>
+            <button className="nav__link" onClick={() => navigate('/admin/orders')}>All Orders</button>
+            <button className="nav__link" onClick={() => navigate('/admin/users')}>All Users</button>
+            <button className="nav__link" onClick={() => navigate('/admin/games')}>All Games</button>
+          </>
+        ) : (
+          <>
+            <button className="nav__link" onClick={() => navigate('/')}>Store</button>
+            <button className="nav__link" onClick={() => navigate('/library')}>Library</button>
+            <div className="nav__search-wrapper" ref={searchRef}>
           <form className="nav__search-form" onSubmit={handleSearch}>
             <input
               type="text"
@@ -288,27 +297,37 @@ const Navbar = () => {
             </div>
           )}
         </div>
+          </>
+        )}
       </nav>
 
       <div className="nav__actions">
         {!loading && (
           isAuthenticated ? (
             <>
-              <button className="nav__action-btn" onClick={() => navigate('/wishlist')}>
-                <span className="nav__action-icon">❤️</span>
-                <span className="nav__action-text">Wishlist</span>
-              </button>
-              <button className="nav__action-btn nav__cart-btn" onClick={() => navigate('/cart')}>
-                <span className="nav__action-icon">🛒</span>
-                <span className="nav__action-text">Cart</span>
-                {cartCount > 0 && (
-                  <span className="nav__cart-badge">{cartCount > 99 ? '99+' : cartCount}</span>
-                )}
-              </button>
-              <button className="nav__action-btn" onClick={() => navigate('/profile')}>
-                <span className="nav__action-icon">👤</span>
-                <span className="nav__action-text">Profile</span>
-              </button>
+              {!isAdmin && (
+                <>
+                  <button className="nav__action-btn" onClick={() => navigate('/wishlist')}>
+                    <span className="nav__action-icon">❤️</span>
+                    <span className="nav__action-text">Wishlist</span>
+                  </button>
+                  <button className="nav__action-btn nav__cart-btn" onClick={() => navigate('/cart')}>
+                    <span className="nav__action-icon">🛒</span>
+                    <span className="nav__action-text">Cart</span>
+                    {cartCount > 0 && (
+                      <span className="nav__cart-badge">{cartCount > 99 ? '99+' : cartCount}</span>
+                    )}
+                  </button>
+                  <button className="nav__action-btn" onClick={() => navigate('/orders')}>
+                    <span className="nav__action-icon">📦</span>
+                    <span className="nav__action-text">Orders</span>
+                  </button>
+                  <button className="nav__action-btn" onClick={() => navigate('/profile')}>
+                    <span className="nav__action-icon">👤</span>
+                    <span className="nav__action-text">Profile</span>
+                  </button>
+                </>
+              )}
               <button className="nav__logout" onClick={handleLogout}>Logout</button>
             </>
           ) : (

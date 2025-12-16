@@ -6,6 +6,7 @@ import { gameService } from '../services/gameService';
 import { referenceService } from '../services/referenceService';
 import { useAuth } from '../context/AuthContext';
 import { useWishlist } from '../context/WishlistContext';
+import api from '../services/api';
 
 // Custom dropdown to allow fully stylable option lists
 const CustomDropdown = ({ options = [], value, onChange }) => {
@@ -136,6 +137,19 @@ const Home = () => {
     categoryId: '',
     languageId: '',
   });
+  const [ownedIdsRaw, setOwnedIdsRaw] = useState([]);
+
+  const ownedIds = useMemo(() => {
+    const ids = (Array.isArray(ownedIdsRaw) ? ownedIdsRaw : []).filter(
+      (id) => id !== null && id !== undefined
+    );
+    const set = new Set();
+    ids.forEach((id) => {
+      set.add(String(id));
+      set.add(Number(id));
+    });
+    return set;
+  }, [ownedIdsRaw]);
 
   const normalizeGames = (res) => {
     if (!res) return [];
@@ -166,6 +180,42 @@ const Home = () => {
     });
     return set;
   }, [wishlist]);
+
+  useEffect(() => {
+    const loadOwnedLibrary = async () => {
+      if (!isAuthenticated) {
+        setOwnedIdsRaw([]);
+        return;
+      }
+      try {
+        const res = await api.get('/library');
+        const payload = res?.data;
+        const data =
+          payload?.data?.games ||
+          payload?.games ||
+          (Array.isArray(payload) ? payload : []);
+
+        const ids = (Array.isArray(data) ? data : []).map(
+          (g) => g.app_id || g.appId || g.id
+        );
+        setOwnedIdsRaw(ids.filter((id) => id !== null && id !== undefined));
+      } catch (err) {
+        // Fail silently; home can still show games
+        console.error('Failed to load library for home filtering:', err);
+      }
+    };
+
+    loadOwnedLibrary();
+  }, [isAuthenticated]);
+
+  const isOwnedGame = useCallback(
+    (game) => {
+      const id = game?.app_id || game?.appId || game?.id;
+      if (id === undefined || id === null) return false;
+      return ownedIds.has(String(id)) || ownedIds.has(Number(id));
+    },
+    [ownedIds]
+  );
 
   const handleToggleWishlist = async (appId) => {
     if (!appId) return;
@@ -236,7 +286,8 @@ const Home = () => {
           const fallbackRes = await gameService.getGames({ limit: 12 });
           games = normalizeGames(fallbackRes);
         }
-        setRecommended(games);
+        const filtered = games.filter((g) => !isOwnedGame(g));
+        setRecommended(filtered);
       } catch (err) {
         const apiError =
           err.response?.data?.error?.message ||
@@ -248,7 +299,7 @@ const Home = () => {
       }
     };
     loadRecommended();
-  }, []);
+  }, [isOwnedGame]);
 
   useEffect(() => {
     const loadFeatured = async () => {
@@ -261,9 +312,10 @@ const Home = () => {
           const fallbackRes = await gameService.getGames({ limit: 20 });
           games = normalizeGames(fallbackRes);
         }
-        setFeatured(games.slice(0, 20));
+        const filtered = games.filter((g) => !isOwnedGame(g));
+        setFeatured(filtered.slice(0, 20));
         if (!hasInteracted) {
-          setCatalog(games.slice(0, 20));
+          setCatalog(filtered.slice(0, 20));
         }
       } catch (err) {
         const apiError =
@@ -276,7 +328,7 @@ const Home = () => {
       }
     };
     loadFeatured();
-  }, [hasInteracted]);
+  }, [hasInteracted, isOwnedGame]);
 
   useEffect(() => {
     const loadReferences = async () => {
@@ -408,7 +460,7 @@ const Home = () => {
         }
 
         // Apply all client-side filters that weren't handled server-side
-        let filteredGames = games;
+        let filteredGames = games.filter((g) => !isOwnedGame(g));
         
         // Filter by price (if not already filtered server-side)
         if ((filters.genreId || filters.categoryId) && (filters.minPrice !== '' || filters.maxPrice !== '')) {
@@ -476,7 +528,7 @@ const Home = () => {
       }
     };
     loadCatalog(0, false);
-  }, [filters]);
+  }, [filters, isOwnedGame]);
 
   const heroItemsFromData = () => {
     const list = Array.isArray(recommended) ? recommended : [];

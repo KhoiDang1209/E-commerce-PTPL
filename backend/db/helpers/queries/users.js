@@ -235,6 +235,26 @@ const usersQueries = {
     `;
     return await queryOne(queryText, [userId, prefer_lang_ids, prefer_genre_ids, prefer_cate_ids, prefer_platforms]);
   },
+
+  /**
+   * Get all users (for admin)
+   * @param {Object} options - Query options
+   * @returns {Promise<Array>} Array of users
+   */
+  getAllUsers: async (options = {}) => {
+    const { limit, offset, sortBy = 'created_at', order = 'DESC' } = options;
+    const orderClause = buildOrderClause(sortBy, order);
+    const paginationClause = buildPaginationClause(limit, offset);
+
+    const queryText = `
+      SELECT id, email, username, role, is_verified, date_of_birth, country, created_at
+      FROM users
+      ${orderClause}
+      ${paginationClause}
+    `.trim();
+
+    return await query(queryText);
+  },
 };
 
 module.exports = usersQueries;

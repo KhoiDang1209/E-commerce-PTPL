@@ -23,7 +23,16 @@ export const AuthProvider = ({ children }) => {
   const checkAuth = async () => {
     try {
       const response = await authService.getMe();
-      setUser(response.data);
+      // Response structure from backend: { success: true, data: { user: {...}, sessionInfo: {...} }, message: '...' }
+      // authService.getMe() returns response.data from axios (which is the JSON body)
+      // So response = { success: true, data: { user: {...}, sessionInfo: {...} }, message: '...' }
+      // Therefore: response.data = { user: {...}, sessionInfo: {...} }
+      // And: response.data.user = { id, email, username, role, ... }
+      const userData = response.data?.user || response.user;
+      if (!userData) {
+        console.warn('User data not found in response:', response);
+      }
+      setUser(userData);
       setIsAuthenticated(true);
     } catch (error) {
       setUser(null);

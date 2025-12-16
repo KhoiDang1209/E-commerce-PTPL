@@ -72,7 +72,16 @@ const updateProfile = async (req, res) => {
   try {
     const user = getCurrentUser(req);
 
-    const { username, email, dateOfBirth, preferLangIds, preferGenreIds, preferCateIds, preferPlatforms } = req.body;
+    const {
+      username,
+      email,
+      dateOfBirth,
+      country,
+      preferLangIds,
+      preferGenreIds,
+      preferCateIds,
+      preferPlatforms,
+    } = req.body;
 
     // Update user basic info (username, email, date_of_birth) if provided
     const userUpdateData = {};
@@ -85,6 +94,9 @@ const updateProfile = async (req, res) => {
     if (dateOfBirth !== undefined) {
       // Accept empty string as null, or validate date format
       userUpdateData.date_of_birth = dateOfBirth === '' || dateOfBirth === null ? null : dateOfBirth;
+    }
+    if (country !== undefined) {
+      userUpdateData.country = country === '' || country === null ? null : country;
     }
 
     // Update users table if username or email is provided

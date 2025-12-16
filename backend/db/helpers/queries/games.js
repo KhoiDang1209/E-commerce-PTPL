@@ -21,14 +21,29 @@ const gamesQueries = {
 
   /**
    * Get all games
-   * @param {Object} options - Query options (limit, offset, sortBy, order)
+   * @param {Object} options - Query options (limit, offset, sortBy, order, excludeOwnedUserId)
    * @returns {Promise<Array>} Array of games
    */
   getAllGames: async (options = {}) => {
-    const { limit, offset, sortBy = 'name', order = 'ASC' } = options;
+    const { limit, offset, sortBy = 'name', order = 'ASC', excludeOwnedUserId } = options;
     const orderClause = buildOrderClause(`g.${sortBy}`, order);
     const paginationClause = buildPaginationClause(limit, offset);
-    
+
+    const params = [];
+    let whereClause = '';
+
+    if (excludeOwnedUserId) {
+      params.push(excludeOwnedUserId);
+      whereClause = `
+        WHERE NOT EXISTS (
+          SELECT 1
+          FROM user_game_library ugl
+          WHERE ugl.user_id = $1
+            AND ugl.app_id = g.app_id
+        )
+      `;
+    }
+
     const queryText = `
       SELECT g.*, gd.header_image, gd.background, pub.publishers
       FROM games g
@@ -39,11 +54,12 @@ const gamesQueries = {
         JOIN publishers p ON gp.publisher_id = p.id
         WHERE gp.app_id = g.app_id
       ) pub ON TRUE
+      ${whereClause}
       ${orderClause}
       ${paginationClause}
     `.trim();
     
-    return await query(queryText);
+    return await query(queryText, params);
   },
 
   /**
@@ -178,6 +194,18 @@ const gamesQueries = {
       paramIndex++;
     }
 
+    // Exclude games already owned by a specific user (for personalized home feeds)
+    if (filters.excludeOwnedUserId) {
+      conditions.push(`NOT EXISTS (
+        SELECT 1
+        FROM user_game_library ugl
+        WHERE ugl.user_id = $${paramIndex}
+          AND ugl.app_id = g.app_id
+      )`);
+      paramValues.push(filters.excludeOwnedUserId);
+      paramIndex++;
+    }
+
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
     const orderClause = buildOrderClause(`g.${sortBy}`, order);
     const paginationClause = buildPaginationClause(limit, offset);
@@ -301,7 +329,7 @@ const gamesQueries = {
    * @returns {Promise<Array>} Array of games
    */
   getGamesByGenre: async (genreId, options = {}) => {
-    const { limit, offset, sortBy = 'name', order = 'ASC', languageId } = options;
+    const { limit, offset, sortBy = 'name', order = 'ASC', languageId, excludeOwnedUserId } = options;
     const orderClause = buildOrderClause(`g.${sortBy}`, order);
     const paginationClause = buildPaginationClause(limit, offset);
     
@@ -317,6 +345,18 @@ const gamesQueries = {
         AND gl.language_id = $${paramIndex}
       )`);
       paramValues.push(parseInt(languageId, 10));
+      paramIndex++;
+    }
+
+    // Exclude owned games
+    if (excludeOwnedUserId) {
+      conditions.push(`NOT EXISTS (
+        SELECT 1
+        FROM user_game_library ugl
+        WHERE ugl.user_id = $${paramIndex}
+          AND ugl.app_id = g.app_id
+      )`);
+      paramValues.push(excludeOwnedUserId);
       paramIndex++;
     }
     
@@ -348,7 +388,7 @@ const gamesQueries = {
    * @returns {Promise<Array>} Array of games
    */
   getGamesByCategory: async (categoryId, options = {}) => {
-    const { limit, offset, sortBy = 'name', order = 'ASC', languageId } = options;
+    const { limit, offset, sortBy = 'name', order = 'ASC', languageId, excludeOwnedUserId } = options;
     const orderClause = buildOrderClause(`g.${sortBy}`, order);
     const paginationClause = buildPaginationClause(limit, offset);
     
@@ -364,6 +404,18 @@ const gamesQueries = {
         AND gl.language_id = $${paramIndex}
       )`);
       paramValues.push(parseInt(languageId, 10));
+      paramIndex++;
+    }
+
+    // Exclude owned games
+    if (excludeOwnedUserId) {
+      conditions.push(`NOT EXISTS (
+        SELECT 1
+        FROM user_game_library ugl
+        WHERE ugl.user_id = $${paramIndex}
+          AND ugl.app_id = g.app_id
+      )`);
+      paramValues.push(excludeOwnedUserId);
       paramIndex++;
     }
     
@@ -489,7 +541,7 @@ const gamesQueries = {
     const profileQuery = 'SELECT prefer_lang_ids, prefer_genre_ids, prefer_cate_ids, prefer_platforms FROM user_profiles WHERE user_id = $1';
     const profile = await queryOne(profileQuery, [userId]);
     
-    // If no profile exists, return top games
+    // If no profile exists, return top games (excluding ones already in user's library)
     if (!profile) {
       const orderClause = buildOrderClause(`g.${sortBy}`, order);
       const queryText = `
@@ -502,10 +554,16 @@ const gamesQueries = {
           JOIN publishers p ON gp.publisher_id = p.id
           WHERE gp.app_id = g.app_id
         ) pub ON TRUE
+        WHERE NOT EXISTS (
+          SELECT 1
+          FROM user_game_library ugl
+          WHERE ugl.user_id = $1
+            AND ugl.app_id = g.app_id
+        )
         ${orderClause}
-        LIMIT $1 OFFSET $2
+        LIMIT $2 OFFSET $3
       `;
-      return await query(queryText, [limit, offset]);
+      return await query(queryText, [userId, limit, offset]);
     }
     
     // Build matching conditions
@@ -563,7 +621,7 @@ const gamesQueries = {
       }
     }
     
-    // If no preferences set, return top games
+    // If no preferences set, return top games (excluding user's library)
     if (conditions.length === 0) {
       const orderClause = buildOrderClause(`g.${sortBy}`, order);
       const queryText = `
@@ -576,12 +634,28 @@ const gamesQueries = {
           JOIN publishers p ON gp.publisher_id = p.id
           WHERE gp.app_id = g.app_id
         ) pub ON TRUE
+        WHERE NOT EXISTS (
+          SELECT 1
+          FROM user_game_library ugl
+          WHERE ugl.user_id = $1
+            AND ugl.app_id = g.app_id
+        )
         ${orderClause}
-        LIMIT $1 OFFSET $2
+        LIMIT $2 OFFSET $3
       `;
-      return await query(queryText, [limit, offset]);
+      return await query(queryText, [userId, limit, offset]);
     }
     
+    // Always exclude games already owned by the user
+    conditions.push(`NOT EXISTS (
+      SELECT 1
+      FROM user_game_library ugl
+      WHERE ugl.user_id = $${paramIndex}
+        AND ugl.app_id = g.app_id
+    )`);
+    params.push(userId);
+    paramIndex++;
+
     // Build the query with preferences
     const whereClause = `WHERE ${conditions.join(' AND ')}`;
     const orderClause = buildOrderClause(`g.${sortBy}`, order);
@@ -618,6 +692,7 @@ const gamesQueries = {
       if (matchedAppIds.length > 0) {
         // Use parameterized query for safety
         const supplementOrderClause = buildOrderClause(`g.${sortBy}`, order);
+        const idPlaceholders = matchedAppIds.map((_, i) => `$${i + 2}`).join(',');
         supplementQuery = `
           SELECT g.*, gd.header_image, gd.background, pub.publishers
           FROM games g
@@ -628,11 +703,17 @@ const gamesQueries = {
             JOIN publishers p ON gp.publisher_id = p.id
             WHERE gp.app_id = g.app_id
           ) pub ON TRUE
-          WHERE g.app_id NOT IN (${matchedAppIds.map((_, i) => `$${i + 1}`).join(',')})
+          WHERE NOT EXISTS (
+            SELECT 1
+            FROM user_game_library ugl
+            WHERE ugl.user_id = $1
+              AND ugl.app_id = g.app_id
+          )
+          AND g.app_id NOT IN (${idPlaceholders})
           ${supplementOrderClause}
-          LIMIT $${matchedAppIds.length + 1}
+          LIMIT $${matchedAppIds.length + 2}
         `;
-        supplementParams = [...matchedAppIds, needed];
+        supplementParams = [userId, ...matchedAppIds, needed];
       } else {
         const supplementOrderClause = buildOrderClause(`g.${sortBy}`, order);
         supplementQuery = `
@@ -645,10 +726,16 @@ const gamesQueries = {
             JOIN publishers p ON gp.publisher_id = p.id
             WHERE gp.app_id = g.app_id
           ) pub ON TRUE
+          WHERE NOT EXISTS (
+            SELECT 1
+            FROM user_game_library ugl
+            WHERE ugl.user_id = $1
+              AND ugl.app_id = g.app_id
+          )
           ${supplementOrderClause}
-          LIMIT $1
+          LIMIT $2
         `;
-        supplementParams = [needed];
+        supplementParams = [userId, needed];
       }
       
       const supplementGames = await query(supplementQuery, supplementParams);

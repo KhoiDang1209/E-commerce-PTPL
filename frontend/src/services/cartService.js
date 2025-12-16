@@ -25,4 +25,14 @@ export const cartService = {
     const response = await api.delete('/cart');
     return response.data;
   },
+
+  validateCoupon: async (couponCode, subtotal) => {
+    const response = await api.post('/cart/validate-coupon', { couponCode, subtotal });
+    return response.data;
+  },
+
+  checkout: async (payload) => {
+    const response = await api.post('/cart/checkout', payload);
+    return response.data;
+  },
 };

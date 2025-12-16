@@ -80,6 +80,31 @@ export const CartProvider = ({ children }) => {
     }
   };
 
+  const checkout = async ({ couponCode, billingAddressId } = {}) => {
+    try {
+      const response = await cartService.checkout({
+        couponCode: couponCode || null,
+        billingAddressId: billingAddressId || null,
+      });
+
+      const order = response.data?.order || response.order || response.data;
+
+      // Backend clears cart; mirror that here
+      setCart({
+        cart: {
+          id: null,
+          total_price: 0,
+          items: [],
+        },
+      });
+      setCartCount(0);
+
+      return order;
+    } catch (error) {
+      throw error;
+    }
+  };
+
   const value = {
     cart,
     cartCount,
@@ -89,6 +114,7 @@ export const CartProvider = ({ children }) => {
     clearCart,
     fetchCart,
     fetchCartCount,
+    checkout,
   };
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/layout/Navbar';
 import { useCart } from '../context/CartContext';
@@ -12,6 +12,8 @@ const Cart = () => {
   const cartData = cart?.cart || cart || {};
   const items = cartData?.items || [];
   const totalPrice = cartData?.total_price || 0;
+
+  const [couponCode, setCouponCode] = useState('');
 
   const handleRemove = async (appId) => {
     try {
@@ -104,6 +106,24 @@ const Cart = () => {
                   <span>Items ({items.length}):</span>
                   <span>{formatPrice(totalPrice)}</span>
                 </div>
+                <div style={{ margin: '16px 0' }}>
+                  <label style={{ fontSize: '0.9rem', color: '#555' }}>Coupon code</label>
+                  <input
+                    type="text"
+                    value={couponCode}
+                    onChange={(e) => setCouponCode(e.target.value)}
+                    placeholder="Enter coupon (optional)"
+                    style={{
+                      width: '100%',
+                      marginTop: '6px',
+                      padding: '8px 10px',
+                      borderRadius: '6px',
+                      border: '1px solid #ddd',
+                      fontSize: '0.9rem',
+                    }}
+                  />
+                </div>
+
                 <div style={styles.summaryDivider}></div>
                 <div style={styles.totalRow}>
                   <span style={styles.totalLabel}>Total:</span>
@@ -112,7 +132,15 @@ const Cart = () => {
                 <button
                   className="checkout-button"
                   style={styles.checkoutButton}
-                  onClick={() => navigate('/checkout')}
+                  disabled={items.length === 0}
+                  onClick={() => {
+                    navigate('/checkout', {
+                      state: {
+                        cart: { items, total_price: totalPrice },
+                        couponCode: couponCode.trim() || '',
+                      },
+                    });
+                  }}
                 >
                   Proceed to Checkout
                 </button>

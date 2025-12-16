@@ -13,6 +13,9 @@ const referenceRoutes = require('./routes/referenceRoutes');
 const gameRoutes = require('./routes/gameRoutes');
 const wishlistRoutes = require('./routes/wishlistRoutes');
 const cartRoutes = require('./routes/cartRoutes');
+const orderRoutes = require('./routes/orderRoutes');
+const paymentRoutes = require('./routes/paymentRoutes');
+const libraryRoutes = require('./routes/libraryRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -45,6 +48,9 @@ app.use('/api/reference', referenceRoutes);
 app.use('/api/games', gameRoutes);
 app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/cart', cartRoutes);
+app.use('/api/orders', orderRoutes);
+app.use('/api/payments', paymentRoutes);
+app.use('/api/library', libraryRoutes);
 
 
 // Health check endpoint

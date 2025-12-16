@@ -19,4 +19,34 @@ export const adminService = {
     return response.data; // { success, data: [...] }
   },
 
+  // Get all orders
+  getAllOrders: async (params = {}) => {
+    const response = await api.get('/admin/orders', { params });
+    return response.data;
+  },
+
+  // Get pending payments
+  getPendingPayments: async (params = {}) => {
+    const response = await api.get('/admin/payments/pending', { params });
+    return response.data;
+  },
+
+  // Update payment status
+  updatePaymentStatus: async (paymentId, payment_status) => {
+    const response = await api.put(`/admin/payments/${paymentId}/status`, { payment_status });
+    return response.data;
+  },
+
+  // Get all users
+  getAllUsers: async (params = {}) => {
+    const response = await api.get('/admin/users', { params });
+    return response.data;
+  },
+
+  // Get all games
+  getAllGames: async (params = {}) => {
+    const response = await api.get('/admin/games', { params });
+    return response.data;
+  },
+
 };

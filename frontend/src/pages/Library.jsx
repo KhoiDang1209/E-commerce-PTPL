@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/layout/Navbar';
 import { useAuth } from '../context/AuthContext';
 import PrivateRoute from '../components/common/PrivateRoute';
+import api from '../services/api';
 
 const Library = () => {
   const { isAuthenticated } = useAuth();
@@ -21,10 +22,15 @@ const Library = () => {
     setLoading(true);
     setError('');
     try {
-      // TODO: Implement library service when backend endpoint is ready
-      // const response = await libraryService.getUserLibrary();
-      // setGames(response.data || []);
-      setGames([]);
+      const res = await api.get('/library');
+      const payload = res?.data;
+
+      const data =
+        payload?.data?.games ||
+        payload?.games ||
+        (Array.isArray(payload) ? payload : []);
+
+      setGames(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error('Library fetch error:', err);
       setError('Failed to load library. Please try again.');

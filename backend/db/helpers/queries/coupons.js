@@ -26,12 +26,12 @@ const couponsQueries = {
   },
 
   /**
-   * Get coupon by code
-   * @param {string} code - Coupon code
+   * Get coupon by code (case-insensitive)
+   * @param {string} code - Coupon code (should be uppercase)
    * @returns {Promise<Object|null>} Coupon object or null
    */
   getCouponByCode: async (code) => {
-    const queryText = 'SELECT * FROM coupons WHERE code = $1';
+    const queryText = 'SELECT * FROM coupons WHERE UPPER(code) = UPPER($1)';
     return await queryOne(queryText, [code]);
   },
 

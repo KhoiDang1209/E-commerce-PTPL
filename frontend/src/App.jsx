@@ -12,7 +12,13 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Profile from './pages/Profile';
 import Checkout from './pages/Checkout';
+import Orders from './pages/Orders';
+import OrderDetail from './pages/OrderDetail';
 import AdminDashboard from './pages/Admin/Dashboard';
+import OrdersManagement from './pages/Admin/OrdersManagement';
+import UsersManagement from './pages/Admin/UsersManagement';
+import GamesManagement from './pages/Admin/GamesManagement';
+import PendingPayments from './pages/Admin/PendingPayments';
 import SearchGames from './pages/SearchGames';
 import Library from './pages/Library';
 
@@ -71,10 +77,58 @@ function App() {
                 }
               />
               <Route
+                path="/orders"
+                element={
+                  <PrivateRoute>
+                    <Orders />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/orders/:id"
+                element={
+                  <PrivateRoute>
+                    <OrderDetail />
+                  </PrivateRoute>
+                }
+              />
+              <Route
                 path="/admin"
                 element={
                   <PrivateRoute>
                     <AdminDashboard />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/admin/orders"
+                element={
+                  <PrivateRoute>
+                    <OrdersManagement />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/admin/users"
+                element={
+                  <PrivateRoute>
+                    <UsersManagement />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/admin/games"
+                element={
+                  <PrivateRoute>
+                    <GamesManagement />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/admin/payments/pending"
+                element={
+                  <PrivateRoute>
+                    <PendingPayments />
                   </PrivateRoute>
                 }
               />
