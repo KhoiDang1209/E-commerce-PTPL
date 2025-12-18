@@ -1,5 +1,5 @@
 // backend/db/helpers/queries/games.js
-const { query, queryOne, buildWhereClause, buildOrderClause, buildPaginationClause } = require('../queryUtils');
+const { client, query, queryOne, buildWhereClause, buildOrderClause, buildPaginationClause } = require('../queryUtils');
 
 /**
  * Game queries
@@ -816,5 +816,165 @@ const gamesQueries = {
   },
 };
 
-module.exports = gamesQueries;
+// Create a new game with full details (transactional)
+const createGameFull = async (data) => {
+  try {
+    await client.query('BEGIN');
 
+    // 1 Insert games
+    const gameRes = await client.query(
+      `
+      INSERT INTO games
+      (name, price_final, discount_percent, release_date,
+       platforms_windows, platforms_mac, platforms_linux)
+      VALUES ($1,$2,$3,$4,$5,$6,$7)
+      RETURNING app_id
+      `,
+      [
+        data.name,
+        data.price_final,
+        data.discount_percent || 0,
+        data.release_date,
+        data.platforms.includes('windows'),
+        data.platforms.includes('mac'),
+        data.platforms.includes('linux')
+      ]
+    );
+
+    const appId = gameRes.rows[0].app_id;
+
+    // 2️⃣ Insert game_descriptions
+    const d = data.description;
+    await client.query(
+      `
+      INSERT INTO game_descriptions
+      (app_id, detailed_description, supported_languages, website, header_image, background)
+      VALUES ($1,$2,$3,$4,$5,$6)
+      `,
+      [
+        appId,
+        d.detailed_description,
+        d.supported_languages,
+        d.website,
+        d.header_image,
+        d.background
+      ]
+    );
+
+    // 3️⃣ Relations helper
+    const insertRelations = async (table, column, ids) => {
+      for (const id of ids) {
+        await client.query(
+          `INSERT INTO ${table} (app_id, ${column}) VALUES ($1,$2)`,
+          [appId, id]
+        );
+      }
+    };
+
+    await insertRelations('game_publishers', 'publisher_id', data.publishers);
+    await insertRelations('game_developers', 'developer_id', data.developers);
+    await insertRelations('game_categories', 'category_id', data.categories);
+    await insertRelations('game_genres', 'genre_id', data.genres);
+    await insertRelations('game_languages', 'language_id', data.languages);
+
+    // 4️⃣ Insert specs
+    const s = data.specs;
+    await client.query(
+      `
+      INSERT INTO game_specs
+      (app_id, pc_min_os, pc_min_processor, pc_min_memory, pc_min_graphics, pc_min_storage)
+      VALUES ($1,$2,$3,$4,$5,$6)
+      `,
+      [
+        appId,
+        s.pc_min_os,
+        s.pc_min_processor,
+        s.pc_min_memory,
+        s.pc_min_graphics,
+        s.pc_min_storage
+      ]
+    );
+
+    await client.query('COMMIT');
+    return { app_id: appId };
+
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  }
+};
+
+// Update an existing game with basic fields, description, and genres
+const updateGameFull = async (appId, data) => {
+  try {
+    await client.query('BEGIN');
+
+    await client.query(
+      `
+      UPDATE games
+      SET
+        name = $1,
+        price_final = $2,
+        discount_percent = $3,
+        release_date = $4,
+        platforms_windows = $5,
+        platforms_mac = $6,
+        platforms_linux = $7
+      WHERE app_id = $8
+      `,
+      [
+        data.name,
+        data.price_final,
+        data.discount_percent || 0,
+        data.release_date,
+        data.platforms_windows,
+        data.platforms_mac,
+        data.platforms_linux,
+        appId
+      ]
+    );
+
+    const d = data.description || {};
+    await client.query(
+      `
+      UPDATE game_descriptions
+      SET detailed_description = $1,
+          header_image = $2,
+          background = $3
+      WHERE app_id = $4
+      `,
+      [
+        d.detailed_description,
+        d.header_image,
+        d.background,
+        appId
+      ]
+    );
+
+    // Refresh genres
+    await client.query('DELETE FROM game_genres WHERE app_id = $1', [appId]);
+    if (Array.isArray(data.genres)) {
+      for (const genreId of data.genres) {
+        await client.query(
+          'INSERT INTO game_genres (app_id, genre_id) VALUES ($1,$2)',
+          [appId, genreId]
+        );
+      }
+    }
+
+    await client.query('COMMIT');
+
+    // Return the updated record with details
+    return await gamesQueries.getGameWithDetails(appId);
+
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  }
+};
+
+module.exports = {
+  ...gamesQueries,
+  createGameFull,
+  updateGameFull
+};

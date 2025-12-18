@@ -23,6 +23,7 @@ import SearchGames from './pages/SearchGames';
 import Library from './pages/Library';
 
 import PrivateRoute from './components/common/PrivateRoute';
+import AddNewGame from './pages/Admin/AddNewGame';
 
 function App() {
   return (
@@ -121,6 +122,14 @@ function App() {
                 element={
                   <PrivateRoute>
                     <GamesManagement />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/admin/games/new"
+                element={
+                  <PrivateRoute>
+                    <AddNewGame />
                   </PrivateRoute>
                 }
               />

@@ -2,12 +2,27 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../../components/layout/Navbar';
 import { adminService } from '../../services/adminService';
+import api from '../../services/api';
+import EditGameModal from './EditGameModal';
 
 const GamesManagement = () => {
   const navigate = useNavigate();
   const [games, setGames] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [selectedGame, setSelectedGame] = useState(null);
+  const [showEdit, setShowEdit] = useState(false);
+
+  const handleView = async (appId) => {
+  try {
+    const res = await api.get(`/admin/games/${appId}`);
+    setSelectedGame(res.data.data);
+    setShowEdit(true);
+  } catch (err) {
+    alert('Failed to load game detail');
+  }
+};
+
 
   useEffect(() => {
     const fetchGames = async () => {
@@ -94,7 +109,7 @@ const GamesManagement = () => {
                       <td style={styles.td}>
                         <button
                           style={styles.viewButton}
-                          onClick={() => navigate(`/game/${game.app_id}`)}
+                          onClick={() => handleView(game.app_id)}                
                         >
                           View
                         </button>
@@ -107,6 +122,20 @@ const GamesManagement = () => {
           )}
         </div>
       </main>
+  
+      {showEdit && selectedGame && (
+        <EditGameModal
+          game={selectedGame}
+          onClose={() => setShowEdit(false)}
+          onSave={async (appId, data) => {
+            await adminService.updateGame(appId, data);
+            setGames(prev =>
+              prev.map(g => g.app_id === appId ? { ...g, ...data } : g)
+            );
+          }}
+        />
+      )}
+
     </>
   );
 };

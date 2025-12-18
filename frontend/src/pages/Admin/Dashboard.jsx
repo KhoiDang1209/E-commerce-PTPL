@@ -124,8 +124,8 @@ const AdminDashboard = () => {
                     <ActionBox
                         title="🎮 Game Management"
                         actions={[
-                            { icon: "✨", label: "Add New Game"  /*, path: "/admin/games/new"*/ },
-                            { icon: "📝", label: "Manage Game List"/*, path: "/admin/games" */},
+                            { icon: "✨", label: "Add New Game"  , path: "/admin/games/new" },
+                            { icon: "📝", label: "Manage Game List", path: "/admin/games" },
                         ]}
                         navigate={navigate}
                     />

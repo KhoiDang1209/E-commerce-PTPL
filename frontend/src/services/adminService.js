@@ -49,4 +49,17 @@ export const adminService = {
     return response.data;
   },
 
+  // Get game details by appId
+  getGameDetails: async (appId) => {
+    const response = await api.get(`/admin/games/${appId}`);
+    return response.data;
+  },
+
+  // Update game
+  updateGame: async (appId, data) => {
+    const response = await api.put(`/admin/games/${appId}`, data);
+    return response.data;
+  },
+
+
 };

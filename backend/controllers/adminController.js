@@ -2,9 +2,43 @@ const bcrypt = require('bcrypt');
 const queries = require('../db/helpers/queries');
 const { sendSuccess, sendError } = require('../utils/response'); // 🔥 [CẬP NHẬT] Thêm import
 const { getRecentOrders } = require('../db/helpers/queries/orders');
+const gamesQueries = require('../db/helpers/queries/games');// 🔥 [THÊM] Import helper cho games
 
+// 🔥 [THÊM] Hàm tạo game đầy đủ
+const createGame = async (req, res) => {
+  try {
+    const result = await gamesQueries.createGameFull(req.body);
+    res.status(201).json({
+      message: 'Game created successfully',
+      app_id: result.app_id
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Create game failed' });
+  }
+};
+
+// Update existing game (basic info + description + genres)
+const updateGame = async (req, res) => {
+  try {
+    const appId = parseInt(req.params.id, 10);
+    if (Number.isNaN(appId)) {
+      return sendError(res, 'Invalid game id', 'VALIDATION_ERROR', 400);
+    }
+
+    const updatedGame = await gamesQueries.updateGameFull(appId, req.body);
+    return sendSuccess(res, updatedGame, 'Game updated successfully');
+  } catch (err) {
+    console.error(err);
+    return sendError(res, 'Update game failed', 'INTERNAL_ERROR', 500);
+  }
+};
 
 module.exports = {
+  // 🔥 [CẬP NHẬT] Thêm hàm
+  createGame,
+  updateGame,
+
   login: async (req, res) => {
     try {
       const { email, password } = req.body;
@@ -245,5 +279,26 @@ module.exports = {
       return sendError(res, 'Failed to update payment status', 'INTERNAL_ERROR', 500);
     }
   },
+
+  // Get game detail by appId
+  getGameDetail: async (req, res) => {
+    try {
+      const appId = parseInt(req.params.id, 10);
+
+      const game = await gamesQueries.getGameWithDetails(appId);
+
+      if (!game) {
+        return sendError(res, 'Game not found', 'NOT_FOUND', 404);
+      }
+
+      // 🔥 QUAN TRỌNG: dùng sendSuccess cho đồng bộ frontend
+      return sendSuccess(res, game, 'Game detail retrieved successfully');
+
+    } catch (err) {
+      console.error(err);
+      return sendError(res, 'Failed to load game detail', 'INTERNAL_ERROR', 500);
+    }
+  },
+
 
 };

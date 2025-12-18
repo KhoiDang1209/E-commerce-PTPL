@@ -127,6 +127,7 @@ const buildPaginationClause = (limit, offset = 0) => {
 };
 
 module.exports = {
+  client,
   query,
   queryOne,
   queryCount,

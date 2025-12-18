@@ -16,6 +16,13 @@ router.get('/orders', requireAdmin, adminController.getAllOrders);
 router.get('/users', requireAdmin, adminController.getAllUsers);
 // Get all games
 router.get('/games', requireAdmin, adminController.getAllGames);
+// 🔥 [CẬP NHẬT] Tuyến đường mới: Tạo game mới
+router.post('/games', requireAdmin, adminController.createGame);
+// Update game
+router.put('/games/:id', requireAdmin, adminController.updateGame);
+//get game detail
+router.get('/games/:id', requireAdmin, adminController.getGameDetail);
+
 // Get pending payments
 router.get('/payments/pending', requireAdmin, adminController.getPendingPayments);
 // Update payment status
