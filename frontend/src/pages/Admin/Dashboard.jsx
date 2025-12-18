@@ -116,7 +116,7 @@ const AdminDashboard = () => {
                     <ActionBox
                         title="🧑‍💻 User Control"
                         actions={[
-                            { icon: "👥", label: "Manage User Accounts"  /*, path: "/admin/users" */},
+                            { icon: "👥", label: "Manage User Accounts", path: "/admin/users" },
                             { icon: "💬", label: "Manage Reviews"      /*, path: "/admin/reviews" */},
                         ]}
                         navigate={navigate}

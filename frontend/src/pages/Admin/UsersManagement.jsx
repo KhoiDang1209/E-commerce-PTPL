@@ -15,7 +15,13 @@ const UsersManagement = () => {
         setLoading(true);
         setError('');
         const response = await adminService.getAllUsers();
-        setUsers(response.data?.users || []);
+        // adminService.getAllUsers() trả về response.data từ backend:
+        // { success: true, data: { users: [...] }, message }
+        const list =
+          response?.data?.users ||
+          response?.users ||
+          [];
+        setUsers(Array.isArray(list) ? list : []);
       } catch (err) {
         const msg =
           err.response?.data?.error?.message ||
