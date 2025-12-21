@@ -182,6 +182,27 @@ module.exports = {
   },
 
   /**
+   * Get all payments (for admin)
+   * GET /api/admin/payments
+   */
+  getAllPayments: async (req, res) => {
+    try {
+      const { limit, offset, sortBy, order } = req.query;
+      const options = {
+        limit: limit ? parseInt(limit, 10) : undefined,
+        offset: offset ? parseInt(offset, 10) : undefined,
+        sortBy: sortBy || 'payment_created',
+        order: order || 'DESC',
+      };
+      const payments = await queries.payments.getAllPayments(options);
+      return sendSuccess(res, { payments }, 'All payments retrieved successfully');
+    } catch (error) {
+      console.error('Get all payments error:', error);
+      return sendError(res, 'Failed to load payments', 'INTERNAL_ERROR', 500);
+    }
+  },
+
+  /**
    * Get pending payments (for admin)
    * GET /api/admin/payments/pending
    */

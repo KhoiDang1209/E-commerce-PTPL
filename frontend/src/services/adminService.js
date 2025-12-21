@@ -31,6 +31,12 @@ export const adminService = {
     return response.data;
   },
 
+  // Get all payments
+  getAllPayments: async (params = {}) => {
+    const response = await api.get('/admin/payments', { params });
+    return response.data;
+  },
+
   // Get pending payments
   getPendingPayments: async (params = {}) => {
     const response = await api.get('/admin/payments/pending', { params });

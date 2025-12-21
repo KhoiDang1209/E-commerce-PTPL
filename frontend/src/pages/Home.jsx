@@ -119,7 +119,6 @@ const Home = () => {
   const [catalogError, setCatalogError] = useState('');
   const [hasInteracted, setHasInteracted] = useState(false);
   const [priceOrder, setPriceOrder] = useState('ASC');
-  const [showFilters, setShowFilters] = useState(false);
   const [catalogOffset, setCatalogOffset] = useState(0);
   const [hasMoreGames, setHasMoreGames] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -842,162 +841,165 @@ const Home = () => {
         <section style={styles.catalogSection}>
           <div style={styles.catalogControlBar}>
             <h2 style={styles.catalogTitle}>All Games</h2>
-            <button
-              style={styles.filterToggleButton}
-              onClick={() => setShowFilters(!showFilters)}
-            >
-              Filter & Sort {showFilters ? '▼' : '▶'}
-            </button>
           </div>
 
-          {showFilters && (
-          <div style={styles.filterBar}>
-            <div style={styles.filterBarGroup}>
-              <label style={styles.filterLabel}>Platform</label>
-              <CustomDropdown
-                options={platformOptions}
-                value={filters.platform}
-                onChange={(val) => handleFilterChange('platform', val)}
-              />
-            </div>
-
-            <div style={styles.filterBarGroup}>
-              <label style={styles.filterLabel}>Genres</label>
-              <CustomDropdown
-                options={genreOptions}
-                value={filters.genreId}
-                onChange={(val) => handleFilterChange('genreId', val)}
-              />
-            </div>
-
-            <div style={styles.filterBarGroup}>
-              <label style={styles.filterLabel}>Categories</label>
-              <CustomDropdown
-                options={categoryOptions}
-                value={filters.categoryId}
-                onChange={(val) => handleFilterChange('categoryId', val)}
-              />
-            </div>
-
-            <div style={styles.filterBarGroup}>
-              <label style={styles.filterLabel}>Languages</label>
-              <CustomDropdown
-                options={languageOptions}
-                value={filters.languageId}
-                onChange={(val) => handleFilterChange('languageId', val)}
-              />
-            </div>
-
-            <div style={styles.filterBarGroup} data-wide>
-              <div style={styles.priceBox}>
-                <div style={styles.priceBoxHeader}>Price range & sort</div>
-                <div style={styles.priceControls}>
-                  <input
-                    type="number"
-                    placeholder="Min"
-                    value={filters.minPrice}
-                    onChange={(e) => handleFilterChange('minPrice', e.target.value)}
-                    style={styles.input}
-                  />
-                  <input
-                    type="number"
-                    placeholder="Max"
-                    value={filters.maxPrice}
-                    onChange={(e) => handleFilterChange('maxPrice', e.target.value)}
-                    style={styles.input}
-                  />
-                </div>
-                <div style={styles.priceActions}>
-                  <div style={styles.radioRow}>
-                    <label style={styles.radioLabel}>
-                      <input
-                        type="radio"
-                        name="priceOrder"
-                        value="ASC"
-                        checked={priceOrder === 'ASC'}
-                        onChange={(e) => setPriceOrder(e.target.value)}
-                      />
-                      Asc
-                    </label>
-                    <label style={styles.radioLabel}>
-                      <input
-                        type="radio"
-                        name="priceOrder"
-                        value="DESC"
-                        checked={priceOrder === 'DESC'}
-                        onChange={(e) => setPriceOrder(e.target.value)}
-                      />
-                      Desc
-                    </label>
+          <div style={styles.twoColumnLayout}>
+            {/* Left Column: Filters */}
+            <div style={styles.filterColumn}>
+              <div style={styles.filterCard}>
+                <h3 style={styles.filterCardTitle}>Filter & Sort</h3>
+                <div style={styles.filterColumnContent}>
+                  <div style={styles.filterBarGroup}>
+                    <label style={styles.filterLabel}>Platform</label>
+                    <CustomDropdown
+                      options={platformOptions}
+                      value={filters.platform}
+                      onChange={(val) => handleFilterChange('platform', val)}
+                    />
                   </div>
-                  <div style={styles.priceButtons}>
-                    <button
-                      style={styles.secondaryButton}
-                      onClick={() => {
-                        setHasInteracted(true);
-                        setCatalogOffset(0);
-                        setHasMoreGames(true);
-                        setAllFilteredGames([]);
-                        setFilters({
-                          sortBy: 'price_final',
-                          order: 'ASC',
-                          platform: '',
-                          minPrice: '',
-                          maxPrice: '',
-                          genreId: '',
-                          categoryId: '',
-                          languageId: '',
-                        });
-                        setPriceOrder('ASC');
-                      }}
-                    >
-                      Clear
-                    </button>
-                    <button
-                      style={styles.applyButton}
-                      onClick={() => {
-                        setHasInteracted(true);
-                        setCatalogOffset(0);
-                        setHasMoreGames(true);
-                        setAllFilteredGames([]);
-                        setFilters((prev) => ({
-                          ...prev,
-                          sortBy: 'price_final',
-                          order: priceOrder,
-                        }));
-                      }}
-                    >
-                      Sort by price
-                    </button>
+
+                  <div style={styles.filterBarGroup}>
+                    <label style={styles.filterLabel}>Genres</label>
+                    <CustomDropdown
+                      options={genreOptions}
+                      value={filters.genreId}
+                      onChange={(val) => handleFilterChange('genreId', val)}
+                    />
+                  </div>
+
+                  <div style={styles.filterBarGroup}>
+                    <label style={styles.filterLabel}>Categories</label>
+                    <CustomDropdown
+                      options={categoryOptions}
+                      value={filters.categoryId}
+                      onChange={(val) => handleFilterChange('categoryId', val)}
+                    />
+                  </div>
+
+                  <div style={styles.filterBarGroup}>
+                    <label style={styles.filterLabel}>Languages</label>
+                    <CustomDropdown
+                      options={languageOptions}
+                      value={filters.languageId}
+                      onChange={(val) => handleFilterChange('languageId', val)}
+                    />
+                  </div>
+
+                  <div style={styles.filterBarGroup}>
+                    <div style={styles.priceBox}>
+                      <div style={styles.priceBoxHeader}>Price range & sort</div>
+                      <div style={styles.priceControls}>
+                        <input
+                          type="number"
+                          placeholder="Min"
+                          value={filters.minPrice}
+                          onChange={(e) => handleFilterChange('minPrice', e.target.value)}
+                          style={styles.input}
+                        />
+                        <input
+                          type="number"
+                          placeholder="Max"
+                          value={filters.maxPrice}
+                          onChange={(e) => handleFilterChange('maxPrice', e.target.value)}
+                          style={styles.input}
+                        />
+                      </div>
+                      <div style={styles.priceActions}>
+                        <div style={styles.radioRow}>
+                          <label style={styles.radioLabel}>
+                            <input
+                              type="radio"
+                              name="priceOrder"
+                              value="ASC"
+                              checked={priceOrder === 'ASC'}
+                              onChange={(e) => setPriceOrder(e.target.value)}
+                            />
+                            Asc
+                          </label>
+                          <label style={styles.radioLabel}>
+                            <input
+                              type="radio"
+                              name="priceOrder"
+                              value="DESC"
+                              checked={priceOrder === 'DESC'}
+                              onChange={(e) => setPriceOrder(e.target.value)}
+                            />
+                            Desc
+                          </label>
+                        </div>
+                        <div style={styles.priceButtons}>
+                          <button
+                            style={styles.secondaryButton}
+                            onClick={() => {
+                              setHasInteracted(true);
+                              setCatalogOffset(0);
+                              setHasMoreGames(true);
+                              setAllFilteredGames([]);
+                              setFilters({
+                                sortBy: 'price_final',
+                                order: 'ASC',
+                                platform: '',
+                                minPrice: '',
+                                maxPrice: '',
+                                genreId: '',
+                                categoryId: '',
+                                languageId: '',
+                              });
+                              setPriceOrder('ASC');
+                            }}
+                          >
+                            Clear
+                          </button>
+                          <button
+                            style={styles.applyButton}
+                            onClick={() => {
+                              setHasInteracted(true);
+                              setCatalogOffset(0);
+                              setHasMoreGames(true);
+                              setAllFilteredGames([]);
+                              setFilters((prev) => ({
+                                ...prev,
+                                sortBy: 'price_final',
+                                order: priceOrder,
+                              }));
+                            }}
+                          >
+                            Sort by price
+                          </button>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
-          )}
 
-          <div style={styles.catalogPane}>
-            <div style={styles.sectionHeader}>
-              <h2 style={styles.sectionTitle}>Games</h2>
-              {catalogLoading && <span style={styles.badge}>Loading...</span>}
-              {catalogError && <span style={styles.error}>{catalogError}</span>}
-              {!catalogLoading && !catalogError && !hasInteracted && featuredLoading && (
-                <span style={styles.badge}>Loading...</span>
-              )}
-              {!catalogLoading && !catalogError && !hasInteracted && featuredError && (
-                <span style={styles.error}>{featuredError}</span>
-              )}
+            {/* Right Column: Games */}
+            <div style={styles.gamesColumn}>
+              <div style={styles.catalogPane}>
+                <div style={styles.sectionHeader}>
+                  <h2 style={styles.sectionTitle}>Games</h2>
+                  {catalogLoading && <span style={styles.badge}>Loading...</span>}
+                  {catalogError && <span style={styles.error}>{catalogError}</span>}
+                  {!catalogLoading && !catalogError && !hasInteracted && featuredLoading && (
+                    <span style={styles.badge}>Loading...</span>
+                  )}
+                  {!catalogLoading && !catalogError && !hasInteracted && featuredError && (
+                    <span style={styles.error}>{featuredError}</span>
+                  )}
+                </div>
+                {catalogItemsFromData().length > 0 && cardGrid(catalogItemsFromData())}
+                {isLoadingMore && (
+                  <div style={styles.loadingMore}>Loading more games...</div>
+                )}
+                {!catalogLoading && !catalogError && catalogItemsFromData().length === 0 && (
+                  <div style={styles.badge}>No games found.</div>
+                )}
+                {!hasMoreGames && catalogItemsFromData().length > 0 && (
+                  <div style={styles.endMessage}>No more games to load.</div>
+                )}
+              </div>
             </div>
-            {catalogItemsFromData().length > 0 && cardGrid(catalogItemsFromData())}
-            {isLoadingMore && (
-              <div style={styles.loadingMore}>Loading more games...</div>
-            )}
-            {!catalogLoading && !catalogError && catalogItemsFromData().length === 0 && (
-              <div style={styles.badge}>No games found.</div>
-            )}
-            {!hasMoreGames && catalogItemsFromData().length > 0 && (
-              <div style={styles.endMessage}>No more games to load.</div>
-            )}
           </div>
         </section>
       </main>
@@ -1165,20 +1167,45 @@ const styles = {
     flexDirection: 'column',
     gap: '12px',
   },
-  filterBar: {
+  twoColumnLayout: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(4, minmax(200px, 1fr)) minmax(340px, 1fr)',
-    gap: '10px',
+    gridTemplateColumns: '280px 1fr',
+    gap: '20px',
+    alignItems: 'start',
+  },
+  filterColumn: {
+    position: 'sticky',
+    top: '20px',
+    height: 'fit-content',
+    maxHeight: 'calc(100vh - 40px)',
+    overflowY: 'auto',
+  },
+  filterCard: {
     background: '#fff',
-    padding: '12px',
     borderRadius: '12px',
+    padding: '16px',
     boxShadow: '0 6px 18px rgba(17,24,39,0.06)',
-    alignItems: 'center',
+  },
+  filterCardTitle: {
+    margin: '0 0 16px 0',
+    fontSize: '16px',
+    fontWeight: 700,
+    color: '#111827',
+    paddingBottom: '12px',
+    borderBottom: '1px solid #e5e7eb',
+  },
+  filterColumnContent: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '16px',
   },
   filterBarGroup: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '6px',
+    gap: '8px',
+  },
+  gamesColumn: {
+    minWidth: 0,
   },
   filterLabel: {
     fontSize: '13px',
@@ -1235,10 +1262,10 @@ const styles = {
     border: '1px solid #e5e7eb',
     borderRadius: '10px',
     background: '#f8fafc',
-    padding: '10px',
+    padding: '12px',
     display: 'flex',
     flexDirection: 'column',
-    gap: '10px',
+    gap: '12px',
     width: '100%',
   },
   priceBoxHeader: {
@@ -1248,6 +1275,7 @@ const styles = {
   },
   priceControls: {
     display: 'flex',
+    flexDirection: 'column',
     gap: '8px',
     width: '100%',
   },
@@ -1288,13 +1316,13 @@ const styles = {
     gap: '8px',
   },
   input: {
-    flex: '0 0 140px',
-    padding: '8px 8px',
+    width: '100%',
+    padding: '8px 10px',
     borderRadius: '8px',
     border: '1px solid #e5e7eb',
     fontSize: '13px',
     color: '#111827',
-    minWidth: 0,
+    boxSizing: 'border-box',
   },
   checkboxLabel: {
     display: 'flex',
@@ -1409,20 +1437,6 @@ const styles = {
     fontSize: '20px',
     fontWeight: 700,
     color: '#111827',
-  },
-  filterToggleButton: {
-    border: '1px solid #d1d5db',
-    background: '#fff',
-    color: '#374151',
-    padding: '8px 16px',
-    borderRadius: '8px',
-    fontSize: '13px',
-    fontWeight: 600,
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px',
-    transition: 'background 0.2s ease',
   },
   loadingMore: {
     textAlign: 'center',

@@ -15,13 +15,13 @@ const PendingPayments = () => {
       try {
         setLoading(true);
         setError('');
-        const response = await adminService.getPendingPayments();
+        const response = await adminService.getAllPayments();
         setPayments(response.data?.payments || []);
       } catch (err) {
         const msg =
           err.response?.data?.error?.message ||
           err.response?.data?.message ||
-          'Failed to load pending payments';
+          'Failed to load payments';
         setError(msg);
       } finally {
         setLoading(false);
@@ -36,7 +36,7 @@ const PendingPayments = () => {
       await adminService.updatePaymentStatus(paymentId, newStatus);
       
       // Refresh payments list
-      const response = await adminService.getPendingPayments();
+      const response = await adminService.getAllPayments();
       setPayments(response.data?.payments || []);
     } catch (err) {
       const msg =
@@ -55,6 +55,30 @@ const PendingPayments = () => {
     return `$${num.toFixed(2)}`;
   };
 
+  const getPaymentStatusColor = (status) => {
+    const statusColors = {
+      initiated: '#f59e0b', // yellow
+      authorized: '#3b82f6', // blue
+      captured: '#10b981', // green
+      paid: '#10b981', // green
+      failed: '#ef4444', // red
+      canceled: '#ef4444', // red
+      refunded: '#8b5cf6', // purple
+    };
+    return statusColors[status] || '#6b7280'; // gray default
+  };
+
+  const getOrderStatusColor = (status) => {
+    const statusColors = {
+      pending: '#f59e0b', // yellow
+      paid: '#10b981', // green
+      canceled: '#ef4444', // red
+      refunded: '#8b5cf6', // purple
+      failed: '#ef4444', // red
+    };
+    return statusColors[status] || '#6b7280'; // gray default
+  };
+
   const paymentStatusOptions = [
     { value: 'authorized', label: 'Authorized', color: '#10b981' },
     { value: 'captured', label: 'Captured', color: '#10b981' },
@@ -70,8 +94,8 @@ const PendingPayments = () => {
         <div style={styles.card}>
           <div style={styles.header}>
             <div>
-              <h1 style={styles.title}>Pending Payments</h1>
-              <p style={styles.subtitle}>Manage payment status for initiated payments</p>
+              <h1 style={styles.title}>Payments Management</h1>
+              <p style={styles.subtitle}>View and manage all payment statuses</p>
             </div>
             <button style={styles.backButton} onClick={() => navigate('/admin')}>
               Back to Dashboard
@@ -79,11 +103,11 @@ const PendingPayments = () => {
           </div>
 
           {loading ? (
-            <div style={styles.message}>Loading pending payments...</div>
+            <div style={styles.message}>Loading payments...</div>
           ) : error ? (
             <div style={styles.error}>{error}</div>
           ) : payments.length === 0 ? (
-            <div style={styles.message}>No pending payments found.</div>
+            <div style={styles.message}>No payments found.</div>
           ) : (
             <div style={styles.tableContainer}>
               <table style={styles.table}>
@@ -95,6 +119,7 @@ const PendingPayments = () => {
                     <th style={styles.th}>Email</th>
                     <th style={styles.th}>Payment Method</th>
                     <th style={styles.th}>Amount</th>
+                    <th style={styles.th}>Payment Status</th>
                     <th style={styles.th}>Order Status</th>
                     <th style={styles.th}>Date</th>
                     <th style={styles.th}>Update Status</th>
@@ -120,12 +145,17 @@ const PendingPayments = () => {
                         <span
                           style={{
                             ...styles.statusBadge,
-                            backgroundColor:
-                              payment.order_status === 'paid'
-                                ? '#10b981'
-                                : payment.order_status === 'canceled'
-                                ? '#ef4444'
-                                : '#f59e0b',
+                            backgroundColor: getPaymentStatusColor(payment.payment_status),
+                          }}
+                        >
+                          {payment.payment_status}
+                        </span>
+                      </td>
+                      <td style={styles.td}>
+                        <span
+                          style={{
+                            ...styles.statusBadge,
+                            backgroundColor: getOrderStatusColor(payment.order_status),
                           }}
                         >
                           {payment.order_status}
@@ -234,6 +264,7 @@ const styles = {
     fontWeight: 600,
     color: '#fff',
     textTransform: 'capitalize',
+    display: 'inline-block',
   },
   select: {
     padding: '6px 12px',

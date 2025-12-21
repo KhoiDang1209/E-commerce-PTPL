@@ -27,6 +27,8 @@ router.put('/games/:id', requireAdmin, adminController.updateGame);
 //get game detail
 router.get('/games/:id', requireAdmin, adminController.getGameDetail);
 
+// Get all payments
+router.get('/payments', requireAdmin, adminController.getAllPayments);
 // Get pending payments
 router.get('/payments/pending', requireAdmin, adminController.getPendingPayments);
 // Update payment status

@@ -92,11 +92,24 @@ const AdminDashboard = () => {
   }, []);
   // 🔥 [THÊM] ĐỊNH NGHĨA HÀM getDisplayValue
   // Hàm này quyết định cách hiển thị: Loading, Error, hoặc giá trị số đã định dạng
-  const getDisplayValue = (value) => {
-    if (loading) return 'Loading...';
-    // Chỉ định dạng số nếu nó là một số
-    return typeof value === 'number' ? value.toLocaleString('en-US') : value;
-  };
+  const getDisplayValue = (value) => {
+    if (loading) return 'Loading...';
+    // Chỉ định dạng số nếu nó là một số
+    return typeof value === 'number' ? value.toLocaleString('en-US') : value;
+  };
+
+  const getOrderStatusColor = (status) => {
+    const statusUpper = String(status).toUpperCase();
+    const statusColors = {
+      PENDING: '#f59e0b', // yellow
+      PAID: '#10b981', // green
+      COMPLETED: '#10b981', // green
+      CANCELED: '#ef4444', // red
+      REFUNDED: '#8b5cf6', // purple
+      FAILED: '#ef4444', // red
+    };
+    return statusColors[statusUpper] || '#6b7280'; // gray default
+  };
 
   return (
     <>
@@ -175,16 +188,14 @@ const AdminDashboard = () => {
             <td style ={styles.td}>#{order.id}</td>
             <td>{order.user_email}</td>
             <td>${Number(order.total_price).toFixed(2)}</td>
-            <td>
-              <span style={{
-                ...styles.statusBadge,
-                ...(order.order_status === 'COMPLETED'
-                  ? styles.statusCompleted
-                  : styles.statusPending)
-              }}>
-                {order.order_status}
-              </span>
-            </td>
+                    <td>
+                      <span style={{
+                        ...styles.statusBadge,
+                        backgroundColor: getOrderStatusColor(order.order_status),
+                      }}>
+                        {order.order_status}
+                      </span>
+                    </td>
             <td>{new Date(order.created_at).toLocaleDateString()}</td>
           </tr>
         ))}
@@ -221,7 +232,7 @@ const AdminDashboard = () => {
                       <span
                         style={{
                           ...styles.statusBadge,
-                          ...(rev.is_recommended ? styles.statusCompleted : styles.statusPending),
+                          backgroundColor: rev.is_recommended ? '#10b981' : '#ef4444',
                         }}
                       >
                         {rev.is_recommended ? 'Recommended' : 'Not Recommended'}
@@ -358,16 +369,8 @@ statusBadge: {
   borderRadius: '999px',
   fontSize: '12px',
   fontWeight: 600,
-},
-
-statusCompleted: {
-  background: '#dcfce7',
-  color: '#166534',
-},
-
-statusPending: {
-  background: '#fef3c7',
-  color: '#92400e',
+  color: '#fff',
+  display: 'inline-block',
 },
 
 placeholder: {

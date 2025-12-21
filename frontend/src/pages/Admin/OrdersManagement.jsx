@@ -36,14 +36,16 @@ const OrdersManagement = () => {
   };
 
   const getStatusColor = (status) => {
+    const statusUpper = String(status).toUpperCase();
     const statusColors = {
-      pending: '#f59e0b',
-      paid: '#10b981',
-      canceled: '#ef4444',
-      refunded: '#8b5cf6',
-      failed: '#ef4444',
+      PENDING: '#f59e0b', // yellow
+      PAID: '#10b981', // green
+      COMPLETED: '#10b981', // green
+      CANCELED: '#ef4444', // red
+      REFUNDED: '#8b5cf6', // purple
+      FAILED: '#ef4444', // red
     };
-    return statusColors[status] || '#6b7280';
+    return statusColors[statusUpper] || statusColors[String(status).toLowerCase()] || '#6b7280';
   };
 
   return (
@@ -191,6 +193,7 @@ const styles = {
     fontWeight: 600,
     color: '#fff',
     textTransform: 'capitalize',
+    display: 'inline-block',
   },
   viewButton: {
     padding: '6px 12px',
