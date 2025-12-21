@@ -139,7 +139,7 @@ const Library = () => {
 
         {!loading && !error && games.length > 0 && (
           <>
-            <div style={styles.gamesGrid}>
+            <div style={styles.gamesList}>
               {games.map((game) => (
                 <div
                   key={game.app_id}
@@ -156,14 +156,15 @@ const Library = () => {
                         style={styles.image}
                       />
                     </div>
-                    <div style={styles.gameInfo}>
-                      <h3 style={styles.gameName}>{game.name}</h3>
-                    </div>
                   </div>
-                  <div style={styles.gameActions}>
+                  <div style={styles.gameContent}>
+                    <h3 style={styles.gameName}>{game.name}</h3>
                     <button
                       style={styles.reviewButton}
-                      onClick={() => openReviewPanel(game)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openReviewPanel(game);
+                      }}
                     >
                       {selectedGame && selectedGame.app_id === game.app_id
                         ? 'Editing Review'
@@ -266,26 +267,52 @@ const styles = {
     marginBottom: '24px',
     color: '#1a1a1a',
   },
-  gamesGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-    gap: '20px',
+  gamesList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '12px',
   },
   gameCard: {
     background: '#fff',
-    borderRadius: '8px',
+    borderRadius: '12px',
     overflow: 'hidden',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-    transition: 'transform 0.2s, box-shadow 0.2s',
+    boxShadow: '0 6px 18px rgba(17,24,39,0.06)',
+    display: 'flex',
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: '12px',
+    gap: '16px',
   },
   gameClickable: {
     cursor: 'pointer',
-  },
-  gameActions: {
-    padding: '8px 12px 12px',
-    borderTop: '1px solid #e5e7eb',
     display: 'flex',
-    justifyContent: 'flex-end',
+  },
+  gameImage: {
+    width: '120px',
+    height: '80px',
+    borderRadius: '8px',
+    overflow: 'hidden',
+    flexShrink: 0,
+    background: '#f0f0f0',
+  },
+  image: {
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover',
+    display: 'block',
+  },
+  gameContent: {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '8px',
+    minWidth: 0,
+  },
+  gameName: {
+    fontSize: '15px',
+    fontWeight: 700,
+    margin: 0,
+    color: '#0f172a',
   },
   reviewButton: {
     padding: '6px 12px',
@@ -296,33 +323,7 @@ const styles = {
     fontSize: '0.85rem',
     fontWeight: 600,
     cursor: 'pointer',
-  },
-  gameImage: {
-    position: 'relative',
-    width: '100%',
-    paddingTop: '75%',
-    background: '#f0f0f0',
-    overflow: 'hidden',
-  },
-  image: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    width: '100%',
-    height: '100%',
-    objectFit: 'cover',
-  },
-  gameInfo: {
-    padding: '12px',
-  },
-  gameName: {
-    fontSize: '0.95rem',
-    fontWeight: '600',
-    margin: 0,
-    color: '#1a1a1a',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap',
+    alignSelf: 'flex-start',
   },
   message: {
     textAlign: 'center',

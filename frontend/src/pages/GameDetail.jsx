@@ -165,6 +165,50 @@ const GameDetail = () => {
     };
   }, [game, isAuthenticated]);
 
+  // Debug: Log description info to check if it's truncated
+  useEffect(() => {
+    if (!game) return;
+    
+    const rawDescription = game?.about_the_game || game?.detailed_description || game?.short_description || game?.description;
+    const descriptionLength = rawDescription ? String(rawDescription).length : 0;
+    
+    // Calculate plain text length inline (strip HTML)
+    let plainLength = 0;
+    if (rawDescription) {
+      const str = String(rawDescription);
+      let text = str.replace(/<[^>]*>/g, ''); // Remove HTML tags
+      text = text
+        .replace(/&nbsp;/g, ' ')
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .replace(/&apos;/g, "'");
+      plainLength = text.trim().length;
+    }
+    
+    console.log('=== Game Description Debug ===');
+    console.log('Game:', game.name || game.title);
+    console.log('App ID:', game.app_id);
+    console.log('Raw description length (with HTML):', descriptionLength);
+    console.log('Plain description length (no HTML):', plainLength);
+    console.log('Description source:', 
+      game?.about_the_game ? 'about_the_game' :
+      game?.detailed_description ? 'detailed_description' :
+      game?.short_description ? 'short_description' :
+      game?.description ? 'description' : 'none'
+    );
+    if (rawDescription) {
+      const preview = String(rawDescription).substring(0, 200);
+      console.log('First 200 chars of raw description:', preview);
+      const lastPart = String(rawDescription).substring(Math.max(0, String(rawDescription).length - 100));
+      console.log('Last 100 chars of raw description:', lastPart);
+      console.log('Full raw description:', rawDescription);
+    }
+    console.log('============================');
+  }, [game]);
+
   const sanitizeText = (text) => {
     if (!text) return '';
     return String(text).replace(/[\[\]'"]/g, '').trim();
@@ -370,11 +414,11 @@ const GameDetail = () => {
   const previewDescription = useMemo(() => {
     if (!plainDescription) return '';
     if (showFullDescription) return plainDescription;
-    if (descriptionLength <= 700) return plainDescription;
-    // Truncate at word boundary near 700 chars
-    const truncated = plainDescription.slice(0, 700);
+    if (descriptionLength <= 500) return plainDescription;
+    // Truncate at word boundary near 500 chars
+    const truncated = plainDescription.slice(0, 500);
     const lastSpace = truncated.lastIndexOf(' ');
-    const cutPoint = lastSpace > 650 ? lastSpace : 700;
+    const cutPoint = lastSpace > 450 ? lastSpace : 500;
     return `${plainDescription.slice(0, cutPoint)}...`;
   }, [plainDescription, descriptionLength, showFullDescription]);
 
@@ -416,201 +460,223 @@ const GameDetail = () => {
 
           {!loading && !error && game && (
             <>
-              <section style={styles.heroSection}>
-                <div style={styles.heroLeft}>
-                  {headerImage ? (
-                    <img src={headerImage} alt={game.title || game.name || 'Game banner'} style={styles.heroImage} />
-                  ) : (
-                    <div style={styles.bannerPlaceholder}>No image available</div>
-                  )}
-                  {/* Gallery placeholder if screenshots become available */}
-                </div>
-
-                <div style={styles.heroRight}>
-                  <h1 style={styles.title}>{game.title || game.name || 'Untitled'}</h1>
-                  <div style={styles.priceRow}>
-                    <span style={styles.priceCurrent}>{priceInfo.final || 'N/A'}</span>
-                    {priceInfo.hasDiscount && priceInfo.original && (
-                      <span style={styles.priceOriginal}>{priceInfo.original}</span>
+              <div style={styles.outerRedWrapper}>
+              <div style={styles.mainContentWrapper}>
+              <div style={styles.heroWrapper}>
+                <section style={styles.heroSection}>
+                  <div style={styles.heroLeft}>
+                    {headerImage ? (
+                      <img src={headerImage} alt={game.title || game.name || 'Game banner'} style={styles.heroImage} />
+                    ) : (
+                      <div style={styles.bannerPlaceholder}>No image available</div>
                     )}
-                    {priceInfo.hasDiscount && priceInfo.percent > 0 && (
-                      <span style={styles.percentBadge}>-{priceInfo.percent}%</span>
-                    )}
+                    {/* Gallery placeholder if screenshots become available */}
                   </div>
 
-                  <div style={styles.ctaGroup}>
-                    <button 
-                      style={styles.ctaPrimary}
-                      onClick={handleAddToCart}
-                    >
-                      Add to Cart
-                    </button>
-                    {cartMessage && (
-                      <div style={cartMessage.includes('Error') || cartMessage.includes('Failed') ? styles.errorMessage : styles.successMessage}>
-                        {cartMessage}
-                      </div>
-                    )}
-                    <button 
-                      style={styles.ctaSecondary}
-                      onClick={handleWishlistToggle}
-                    >
-                      {isInWishlist ? '❤️ Remove from Wishlist' : '🤍 Add to Wishlist'}
-                    </button>
-                    {wishlistMessage && (
-                      <div style={wishlistMessage.includes('Error') || wishlistMessage.includes('Failed') ? styles.errorMessage : styles.successMessage}>
-                        {wishlistMessage}
-                      </div>
-                    )}
-                  </div>
+                  <div style={styles.heroRightWrapper}>
+                    <div style={styles.heroRight}>
+                    <h1 style={styles.title}>{game.title || game.name || 'Untitled'}</h1>
+                    <div style={styles.heroRightContent}>
+                    <div style={styles.priceRow}>
+                      <span style={styles.priceCurrent}>{priceInfo.final || 'N/A'}</span>
+                      {priceInfo.hasDiscount && priceInfo.original && (
+                        <span style={styles.priceOriginal}>{priceInfo.original}</span>
+                      )}
+                      {priceInfo.hasDiscount && priceInfo.percent > 0 && (
+                        <span style={styles.percentBadge}>-{priceInfo.percent}%</span>
+                      )}
+                    </div>
 
-                  <div style={styles.quickInfo}>
-                    {developers.length > 0 && (
-                      <div style={styles.quickItem}>
-                        <span style={styles.quickLabel}>Developer</span>
-                        <span style={styles.quickValue}>{developers.join(', ')}</span>
-                      </div>
-                    )}
-                    {publishers.length > 0 && (
-                      <div style={styles.quickItem}>
-                        <span style={styles.quickLabel}>Publisher</span>
-                        <span style={styles.quickValue}>{publishers.join(', ')}</span>
-                      </div>
-                    )}
-                    {game?.release_date && (
-                      <div style={styles.quickItem}>
-                        <span style={styles.quickLabel}>Release Date</span>
-                        <span style={styles.quickValue}>{formatDate(game.release_date)}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </section>
+                    <div style={styles.ctaGroup}>
+                      <button 
+                        style={styles.ctaPrimary}
+                        onClick={handleAddToCart}
+                      >
+                        Add to Cart
+                      </button>
+                      {cartMessage && (
+                        <div style={cartMessage.includes('Error') || cartMessage.includes('Failed') ? styles.errorMessage : styles.successMessage}>
+                          {cartMessage}
+                        </div>
+                      )}
+                      <button 
+                        style={styles.ctaSecondary}
+                        onClick={handleWishlistToggle}
+                      >
+                        {isInWishlist ? '❤️ Remove from Wishlist' : '🤍 Add to Wishlist'}
+                      </button>
+                      {wishlistMessage && (
+                        <div style={wishlistMessage.includes('Error') || wishlistMessage.includes('Failed') ? styles.errorMessage : styles.successMessage}>
+                          {wishlistMessage}
+                        </div>
+                      )}
+                    </div>
 
-              <section style={styles.contentSection}>
+                    <div style={styles.quickInfo}>
+                      {developers.length > 0 && (
+                        <div style={styles.quickItem}>
+                          <span style={styles.quickLabel}>Developer</span>
+                          <span style={styles.quickValue}>{developers.join(', ')}</span>
+                        </div>
+                      )}
+                      {publishers.length > 0 && (
+                        <div style={styles.quickItem}>
+                          <span style={styles.quickLabel}>Publisher</span>
+                          <span style={styles.quickValue}>{publishers.join(', ')}</span>
+                        </div>
+                      )}
+                      {game?.release_date && (
+                        <div style={styles.quickItem}>
+                          <span style={styles.quickLabel}>Release Date</span>
+                          <span style={styles.quickValue}>{formatDate(game.release_date)}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  </div>
+                  </div>
+                </section>
+              </div>
+
+              <div style={styles.contentSection}>
                 <div style={styles.aboutCol}>
-                  <h2 style={styles.sectionTitle}>About this game</h2>
-                  <p style={styles.description}>{previewDescription}</p>
-                  {descriptionLength > 700 && (
-                    <button style={styles.readMore} onClick={() => setShowFullDescription((s) => !s)}>
-                      {showFullDescription ? 'Show less' : 'Read more'}
-                    </button>
-                  )}
+                  <div style={styles.aboutContent}>
+                    <h2 style={styles.aboutTitle}>About this game</h2>
+                    <p style={styles.description}>{previewDescription}</p>
+                    {descriptionLength > 500 && (
+                      <button style={styles.readMore} onClick={() => setShowFullDescription((s) => !s)}>
+                        {showFullDescription ? 'Show less' : 'Read more'}
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 <aside style={styles.sidebar}>
                   {genres.length > 0 && (
-                    <div style={styles.sidebarCard}>
-                      <div style={styles.sidebarLabel}>Genres</div>
-                      <div style={styles.badgeRow}>
-                        {genres.map((g, idx) => (
-                          <span key={idx} style={styles.badge}>
-                            {g}
-                          </span>
-                        ))}
+                    <div style={styles.sidebarCardWrapper}>
+                      <div style={styles.sidebarCard}>
+                        <div style={styles.sidebarLabel}>Genres</div>
+                        <div style={styles.badgeRow}>
+                          {genres.map((g, idx) => (
+                            <span key={idx} style={styles.badge}>
+                              {g}
+                            </span>
+                          ))}
+                        </div>
                       </div>
                     </div>
                   )}
 
                   {categoriesDisplay.primary.length > 0 && (
-                    <div style={styles.sidebarCard}>
-                      <div style={styles.sidebarLabel}>Features</div>
-                      <div style={styles.badgeRow}>
-                        {categoriesDisplay.primary.map((c, idx) => (
-                          <span key={idx} style={styles.badge}>
-                            {c}
-                          </span>
-                        ))}
-                        {categoriesDisplay.more > 0 && !showAllCategories && (
+                    <div style={styles.sidebarCardWrapper}>
+                      <div style={styles.sidebarCard}>
+                        <div style={styles.sidebarLabel}>Features</div>
+                        <div style={styles.badgeRow}>
+                          {categoriesDisplay.primary.map((c, idx) => (
+                            <span key={idx} style={styles.badge}>
+                              {c}
+                            </span>
+                          ))}
+                          {categoriesDisplay.more > 0 && !showAllCategories && (
+                            <button
+                              style={styles.moreBadgeButton}
+                              onClick={() => setShowAllCategories(true)}
+                            >
+                              +{categoriesDisplay.more} more
+                            </button>
+                          )}
+                        </div>
+                        {showAllCategories && categoriesDisplay.more > 0 && (
                           <button
-                            style={styles.moreBadgeButton}
-                            onClick={() => setShowAllCategories(true)}
+                            style={styles.readMore}
+                            onClick={() => setShowAllCategories(false)}
                           >
-                            +{categoriesDisplay.more} more
+                            Show less
                           </button>
                         )}
                       </div>
-                      {showAllCategories && categoriesDisplay.more > 0 && (
-                        <button
-                          style={styles.readMore}
-                          onClick={() => setShowAllCategories(false)}
-                        >
-                          Show less
-                        </button>
-                      )}
                     </div>
                   )}
 
                   {languagesDisplay.primary.length > 0 && (
-                    <div style={styles.sidebarCard}>
-                      <div style={styles.sidebarLabel}>Languages</div>
-                      <div style={styles.badgeRow}>
-                        {languagesDisplay.primary.map((lang, idx) => (
-                          <span key={idx} style={styles.badge}>
-                            {lang}
-                          </span>
-                        ))}
-                        {languagesDisplay.more > 0 && !showAllLanguages && (
+                    <div style={styles.sidebarCardWrapperLanguages}>
+                      <div style={styles.sidebarCard}>
+                        <div style={styles.sidebarLabel}>Languages</div>
+                        <div style={styles.badgeRow}>
+                          {languagesDisplay.primary.map((lang, idx) => (
+                            <span key={idx} style={styles.badge}>
+                              {lang}
+                            </span>
+                          ))}
+                          {languagesDisplay.more > 0 && !showAllLanguages && (
+                            <button
+                              style={styles.moreBadgeButton}
+                              onClick={() => setShowAllLanguages(true)}
+                            >
+                              +{languagesDisplay.more} more
+                            </button>
+                          )}
+                        </div>
+                        {showAllLanguages && languagesDisplay.more > 0 && (
                           <button
-                            style={styles.moreBadgeButton}
-                            onClick={() => setShowAllLanguages(true)}
+                            style={styles.readMore}
+                            onClick={() => setShowAllLanguages(false)}
                           >
-                            +{languagesDisplay.more} more
+                            Show less
                           </button>
                         )}
                       </div>
-                      {showAllLanguages && languagesDisplay.more > 0 && (
-                        <button
-                          style={styles.readMore}
-                          onClick={() => setShowAllLanguages(false)}
-                        >
-                          Show less
-                        </button>
-                      )}
                     </div>
                   )}
                 </aside>
-              </section>
+              </div>
 
               {(minSpecs.length > 0 || recSpecs.length > 0) && (
-                <section style={styles.requirementsSection}>
-                  <h2 style={styles.sectionTitle}>System Requirements</h2>
+                <div style={styles.requirementsSection}>
+                  <h2 style={styles.requirementsTitle}>System Requirements</h2>
                   <div style={styles.specGrid}>
                     {minSpecs.length > 0 && (
-                      <div style={styles.specCard}>
-                        <h3 style={styles.specTitle}>Minimum</h3>
-                        <ul style={styles.specList}>
-                          {minSpecs.map((item, idx) => (
-                            <li key={idx} style={styles.specItem}>
-                              <span style={styles.specLabel}>{item.label}</span>
-                              <span style={styles.specValue}>{item.value}</span>
-                            </li>
-                          ))}
-                        </ul>
+                      <div style={styles.specCardWrapper}>
+                        <div style={styles.specCard}>
+                          <h3 style={styles.specTitle}>Minimum</h3>
+                          <ul style={styles.specList}>
+                            {minSpecs.map((item, idx) => (
+                              <li key={idx} style={styles.specItem}>
+                                <span style={styles.specLabel}>{item.label}</span>
+                                <span style={styles.specValue}>{item.value}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
                       </div>
                     )}
                     {recSpecs.length > 0 && (
-                      <div style={styles.specCard}>
-                        <h3 style={styles.specTitle}>Recommended</h3>
-                        <ul style={styles.specList}>
-                          {recSpecs.map((item, idx) => (
-                            <li key={idx} style={styles.specItem}>
-                              <span style={styles.specLabel}>{item.label}</span>
-                              <span style={styles.specValue}>{item.value}</span>
-                            </li>
-                          ))}
-                        </ul>
+                      <div style={styles.specCardWrapper}>
+                        <div style={styles.specCard}>
+                          <h3 style={styles.specTitle}>Recommended</h3>
+                          <ul style={styles.specList}>
+                            {recSpecs.map((item, idx) => (
+                              <li key={idx} style={styles.specItem}>
+                                <span style={styles.specLabel}>{item.label}</span>
+                                <span style={styles.specValue}>{item.value}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
                       </div>
                     )}
                   </div>
-                </section>
+                </div>
               )}
 
+              <div style={styles.reviewsRedWrapper}>
               <section style={styles.reviewsSection}>
-                <h2 style={styles.sectionTitle}>Player Reviews</h2>
+                <h2 style={styles.reviewSectionTitle}>Player Reviews</h2>
 
                 {/* Review form */}
                 {isAuthenticated ? (
-                  <form onSubmit={handleSubmitReview} style={styles.reviewForm}>
+                  <div style={styles.reviewFormWrapper}>
+                    <form onSubmit={handleSubmitReview} style={styles.reviewForm}>
                     <div style={styles.reviewToggleRow}>
                       <span style={styles.reviewLabel}>Your recommendation:</span>
                       <div style={styles.toggleGroup}>
@@ -661,7 +727,8 @@ const GameDetail = () => {
                     {reviewSuccess && (
                       <div style={styles.successMessage}>{reviewSuccess}</div>
                     )}
-                  </form>
+                    </form>
+                  </div>
                 ) : (
                   <div style={styles.reviewMessageRow}>
                     <span>Log in to write a review.</span>
@@ -692,7 +759,8 @@ const GameDetail = () => {
                 {reviews && reviews.length > 0 ? (
                   <div style={styles.reviewList}>
                     {reviews.map((r) => (
-                      <div key={r.id} style={styles.reviewCard}>
+                      <div key={r.id} style={styles.reviewCardWrapper}>
+                        <div style={styles.reviewCard}>
                         <div style={styles.reviewHeader}>
                           <span style={styles.reviewUser}>
                             {r.username || 'User'}
@@ -725,6 +793,7 @@ const GameDetail = () => {
                             <p style={styles.adminReplyBody}>{r.reply_text}</p>
                           </div>
                         )}
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -734,6 +803,9 @@ const GameDetail = () => {
                   </p>
                 )}
               </section>
+              </div>
+              </div>
+              </div>
             </>
           )}
         </div>
@@ -748,7 +820,7 @@ const styles = {
   page: {
     background: '#f8f9fb',
     minHeight: '100vh',
-    padding: '16px',
+    padding: '16px 16px 0px 16px',
   },
   container: {
     maxWidth: '1200px',
@@ -774,38 +846,83 @@ const styles = {
     color: '#6b7280',
     fontWeight: 600,
     background: 'linear-gradient(135deg, #e5e7eb, #f3f4f6)',
+    borderRadius: '0px',
+  },
+  outerRedWrapper: {
+    background: 'linear-gradient(to bottom, #EC5A61 0%, #ffffff 50%, #E02E35 100%)',
+    borderRadius: '0px',
+    padding: '72px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '12px',
+    marginLeft: '-16px',
+    marginRight: '-16px',
+    marginBottom: '-16px',
+    minHeight: 'calc(100vh - 80px)',
+  },
+  mainContentWrapper: {
+    background: 'linear-gradient(135deg, #215122 0%, #748772 50%, #F2F0E9 100%)',
+    borderRadius: '0px',
+    padding: '16px',
+    paddingRight: '30px',
+    boxShadow: '0 12px 30px rgba(33, 81, 34, 0.25), inset 0 0 0 1px rgba(0, 0, 0, 0.1), 4px 4px 8px rgba(33, 81, 34, 0.4)',
+    marginRight: '0px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '12px',
+  },
+  heroWrapper: {
+    background: 'transparent',
+    borderRadius: '0px',
+    padding: '0px',
+    boxShadow: 'none',
+    marginRight: '0px',
   },
   heroSection: {
     display: 'grid',
     gridTemplateColumns: '65% 35%',
     gap: '12px',
-    alignItems: 'start',
+    alignItems: 'stretch',
   },
   heroLeft: {
-    background: '#fff',
-    borderRadius: '16px',
+    background: 'linear-gradient(135deg, #ffffff 0%, #ffffff 45%, #C9CCBB 55%, #F2F0E9 70%, #748772 100%)',
+    borderRadius: '0px',
     overflow: 'hidden',
-    boxShadow: '0 12px 30px rgba(17,24,39,0.12)',
+    boxShadow: '0 8px 20px rgba(33, 81, 34, 0.25), inset 0 0 0 1px rgba(0, 0, 0, 0.1)',
+    padding: '8px',
+    boxSizing: 'border-box',
+    display: 'flex',
+    alignItems: 'stretch',
   },
   heroImage: {
     width: '100%',
-    height: '360px',
+    height: '100%',
     objectFit: 'cover',
     display: 'block',
+    borderRadius: '0px',
+    boxShadow: 'inset 0 0 20px rgba(0, 0, 0, 0.25), inset 0 0 40px rgba(0, 0, 0, 0.15)',
+  },
+  heroRightWrapper: {
+    background: 'linear-gradient(to right, #748772 0%, #C9CCBB 40%, #F2F0E9 60%, #E02E35 100%)',
+    borderRadius: '0px',
+    padding: '8px',
+    boxShadow: '0 8px 20px rgba(33, 81, 34, 0.25), inset 0 0 0 1px rgba(0, 0, 0, 0.1)',
   },
   heroRight: {
-    background: '#fff',
-    borderRadius: '16px',
-    padding: '18px',
-    boxShadow: '0 10px 25px rgba(17,24,39,0.08)',
+    background: '#C9CCBB',
+    borderRadius: '0px',
+    padding: '20px',
+    boxShadow: 'none',
     display: 'flex',
     flexDirection: 'column',
     gap: '12px',
+    boxSizing: 'border-box',
   },
   title: {
     margin: 0,
     fontSize: '26px',
     color: '#0f172a',
+    fontWeight: 700,
   },
   priceRow: {
     display: 'flex',
@@ -851,12 +968,12 @@ const styles = {
     padding: '12px',
     border: 'none',
     borderRadius: '10px',
-    background: 'linear-gradient(135deg, #16a34a, #22c55e)',
+    background: 'linear-gradient(135deg, #215122, #748772)',
     color: '#fff',
     fontWeight: 700,
     fontSize: '15px',
     cursor: 'pointer',
-    boxShadow: '0 8px 18px rgba(34,197,94,0.25)',
+    boxShadow: '0 8px 18px rgba(33, 81, 34, 0.3)',
   },
   ctaSecondary: {
     width: '100%',
@@ -876,55 +993,98 @@ const styles = {
     marginTop: '4px',
   },
   quickItem: {
-    background: '#f8fafc',
-    borderRadius: '10px',
+    background: '#F2F0E9',
+    borderRadius: '0px',
     padding: '10px',
     display: 'flex',
     flexDirection: 'column',
     gap: '4px',
+    border: '1px solid rgba(116, 135, 114, 0.2)',
   },
   quickLabel: {
     fontSize: '11px',
     textTransform: 'uppercase',
     letterSpacing: '0.05em',
-    color: '#6b7280',
+    color: '#215122',
+    fontWeight: 700,
   },
   quickValue: {
     fontSize: '14px',
-    color: '#0f172a',
+    color: '#1f2937',
+    fontWeight: 500,
+  },
+  heroRightContent: {
+    background: '#ffffff',
+    borderRadius: '12px',
+    padding: '18px',
+    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '12px',
   },
   contentSection: {
     display: 'grid',
-    gridTemplateColumns: '70% 30%',
+    gridTemplateColumns: '65% 35%',
     gap: '12px',
     alignItems: 'start',
   },
   aboutCol: {
-    background: '#fff',
-    borderRadius: '16px',
-    boxShadow: '0 10px 25px rgba(17,24,39,0.08)',
-    padding: '18px',
+    background: 'transparent',
+    borderRadius: '0px',
+    boxShadow: 'none',
+    padding: '0px',
     display: 'flex',
     flexDirection: 'column',
-    gap: '10px',
+    gap: '12px',
+  },
+  aboutTitle: {
+    margin: 0,
+    fontSize: '13px',
+    fontWeight: 600,
+    display: 'inline-block',
+    background: 'linear-gradient(135deg, #215122, #748772)',
+    color: '#ffffff',
+    padding: '6px 10px',
+    borderRadius: '999px',
+  },
+  aboutContent: {
+    background: '#ffffff',
+    borderRadius: '12px',
+    padding: '18px',
+    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '16px',
   },
   sidebar: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '10px',
+    gap: '0px',
+  },
+  sidebarCardWrapper: {
+    background: 'linear-gradient(135deg, #748772 0%, #C9CCBB 40%, #F2F0E9 60%, #E02E35 100%)',
+    borderRadius: '0px',
+    padding: '8px',
+    boxShadow: '0 8px 20px rgba(33, 81, 34, 0.25), inset 0 0 0 1px rgba(0, 0, 0, 0.1)',
+  },
+  sidebarCardWrapperLanguages: {
+    background: 'linear-gradient(135deg, #748772 0%, #C9CCBB 40%, #F2F0E9 60%, #E02E35 100%)',
+    borderRadius: '0px',
+    padding: '8px',
+    boxShadow: '0 8px 20px rgba(33, 81, 34, 0.25), inset 0 0 0 1px rgba(0, 0, 0, 0.1)',
   },
   sidebarCard: {
-    background: '#fff',
-    borderRadius: '14px',
-    boxShadow: '0 10px 25px rgba(17,24,39,0.08)',
+    background: '#F2F0E9',
+    borderRadius: '0px',
     padding: '14px',
     display: 'flex',
     flexDirection: 'column',
     gap: '10px',
+    boxShadow: 'none',
   },
   sidebarLabel: {
     fontSize: '13px',
-    color: '#6b7280',
+    color: '#000000',
     fontWeight: 700,
   },
   badgeRow: {
@@ -933,17 +1093,17 @@ const styles = {
     gap: '8px',
   },
   badge: {
-    background: '#e0f2fe',
-    color: '#075985',
+    background: 'linear-gradient(135deg, #215122, #748772)',
+    color: '#ffffff',
     padding: '6px 10px',
     borderRadius: '999px',
     fontSize: '12px',
     fontWeight: 600,
   },
   moreBadgeButton: {
-    border: '1px dashed #93c5fd',
-    background: '#eff6ff',
-    color: '#2563eb',
+    border: '1px dashed #748772',
+    background: '#F2F0E9',
+    color: '#215122',
     padding: '6px 10px',
     borderRadius: '999px',
     fontSize: '12px',
@@ -965,6 +1125,12 @@ const styles = {
     fontSize: '18px',
     color: '#0f172a',
   },
+  requirementsTitle: {
+    margin: 0,
+    fontSize: '18px',
+    color: '#ffffff',
+    fontWeight: 700,
+  },
   description: {
     margin: 0,
     color: '#374151',
@@ -972,27 +1138,38 @@ const styles = {
     whiteSpace: 'pre-line',
   },
   requirementsSection: {
-    background: '#f3f4f6',
-    borderRadius: '16px',
+    background: 'transparent',
+    borderRadius: '0px',
     padding: '14px',
-    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.6)',
+    boxShadow: 'none',
     display: 'flex',
     flexDirection: 'column',
     gap: '10px',
+    marginTop: '0px',
   },
   specGrid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
     gap: '12px',
   },
-  specCard: {
-    background: '#fff',
+  specCardWrapper: {
+    background: 'linear-gradient(135deg, #EC5A61 0%, #ffffff 50%, #E02E35 100%)',
     borderRadius: '12px',
+    padding: '8px',
+    boxShadow: '0 8px 20px rgba(33, 81, 34, 0.25), inset 0 0 0 1px rgba(0, 0, 0, 0.1)',
+    display: 'flex',
+    height: '100%',
+  },
+  specCard: {
+    background: '#ffffff',
+    borderRadius: '8px',
     padding: '12px',
     display: 'flex',
     flexDirection: 'column',
     gap: '8px',
-    boxShadow: '0 6px 16px rgba(17,24,39,0.06)',
+    boxShadow: 'none',
+    width: '100%',
+    flex: 1,
   },
   specTitle: {
     margin: 0,
@@ -1041,15 +1218,35 @@ const styles = {
     color: '#dc2626',
     fontWeight: '600',
   },
-  reviewsSection: {
-    marginTop: '14px',
-    background: '#fff',
-    borderRadius: '16px',
+  reviewsRedWrapper: {
+    background: 'linear-gradient(to bottom, #EC5A61 0%, #E02E35 100%)',
+    borderRadius: '0px',
     padding: '16px',
-    boxShadow: '0 10px 24px rgba(15,23,42,0.12)',
+    paddingRight: '30px',
+    boxShadow: '0 4px 12px rgba(33, 81, 34, 0.25), inset 0 0 0 1px rgba(0, 0, 0, 0.1)',
+    marginTop: '0px',
+  },
+  reviewsSection: {
+    marginTop: '0px',
+    background: 'transparent',
+    borderRadius: '0px',
+    padding: '0px',
+    boxShadow: 'none',
     display: 'flex',
     flexDirection: 'column',
-    gap: '10px',
+    gap: '12px',
+  },
+  reviewSectionTitle: {
+    margin: 0,
+    fontSize: '18px',
+    color: '#ffffff',
+    fontWeight: 700,
+  },
+  reviewFormWrapper: {
+    background: '#ffffff',
+    borderRadius: '12px',
+    padding: '18px',
+    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
   },
   reviewForm: {
     display: 'flex',
@@ -1113,7 +1310,8 @@ const styles = {
     justifyContent: 'space-between',
     alignItems: 'center',
     fontSize: '13px',
-    color: '#4b5563',
+    color: '#ffffff',
+    fontWeight: 600,
   },
   loginInlineButton: {
     border: 'none',
@@ -1127,7 +1325,8 @@ const styles = {
     display: 'flex',
     gap: '12px',
     fontSize: '12px',
-    color: '#6b7280',
+    color: '#ffffff',
+    fontWeight: 600,
   },
   reviewList: {
     display: 'flex',
@@ -1135,11 +1334,17 @@ const styles = {
     gap: '8px',
     marginTop: '4px',
   },
+  reviewCardWrapper: {
+    background: '#ffffff',
+    borderRadius: '12px',
+    padding: '8px',
+    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
+  },
   reviewCard: {
     padding: '10px',
-    borderRadius: '10px',
-    background: '#f9fafb',
-    border: '1px solid #e5e7eb',
+    borderRadius: '0px',
+    background: 'transparent',
+    border: 'none',
   },
   reviewHeader: {
     display: 'flex',
@@ -1165,10 +1370,11 @@ const styles = {
   },
   adminReplyBox: {
     marginTop: '8px',
-    padding: '8px 10px',
+    padding: '12px',
     borderRadius: '10px',
-    background: '#eff6ff',
-    border: '1px solid #bfdbfe',
+    background: '#ffffff',
+    border: '1px solid rgba(255, 255, 255, 0.3)',
+    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
   },
   adminReplyHeader: {
     display: 'flex',
@@ -1177,9 +1383,9 @@ const styles = {
     marginBottom: '4px',
   },
   adminReplyLabel: {
-    fontSize: '12px',
+    fontSize: '13px',
     fontWeight: 700,
-    color: '#1d4ed8',
+    color: '#3b82f6',
   },
   adminReplyBy: {
     fontSize: '11px',
@@ -1192,6 +1398,7 @@ const styles = {
   },
   noReviewsText: {
     fontSize: '13px',
-    color: '#6b7280',
+    color: '#ffffff',
+    fontWeight: 600,
   },
 };

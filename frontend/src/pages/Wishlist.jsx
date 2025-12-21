@@ -44,20 +44,13 @@ const Wishlist = () => {
         ) : normalized.length === 0 ? (
           <div style={styles.badge}>Your wishlist is empty</div>
         ) : (
-          <div style={styles.grid}>
+          <div style={styles.list}>
             {normalized.map((g) => (
               <div key={g.id} style={styles.card}>
-                <div style={styles.imageWrap}>
+                <div style={styles.imageContainer}>
                   <img src={g.image} alt={g.title} style={styles.image} />
-                  <button
-                    style={styles.removeBtn}
-                    onClick={() => removeFromWishlist(g.appId)}
-                    aria-label="remove from wishlist"
-                  >
-                    Remove
-                  </button>
                 </div>
-                <div style={styles.body}>
+                <div style={styles.cardContent}>
                   <Link to={g.appId ? `/game/${g.appId}` : '#'} style={styles.cardLink}>
                     <div style={styles.cardTitle}>{g.title}</div>
                   </Link>
@@ -68,6 +61,13 @@ const Wishlist = () => {
                     )}
                   </div>
                 </div>
+                <button
+                  style={styles.removeBtn}
+                  onClick={() => removeFromWishlist(g.appId)}
+                  aria-label="remove from wishlist"
+                >
+                  Remove
+                </button>
               </div>
             ))}
           </div>
@@ -97,9 +97,9 @@ const styles = {
     color: '#6b7280',
     fontSize: '14px',
   },
-  grid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+  list: {
+    display: 'flex',
+    flexDirection: 'column',
     gap: '12px',
   },
   card: {
@@ -108,12 +108,17 @@ const styles = {
     overflow: 'hidden',
     boxShadow: '0 6px 18px rgba(17,24,39,0.06)',
     display: 'flex',
-    flexDirection: 'column',
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: '12px',
+    gap: '16px',
   },
-  imageWrap: {
-    position: 'relative',
-    height: '140px',
+  imageContainer: {
+    width: '120px',
+    height: '80px',
+    borderRadius: '8px',
     overflow: 'hidden',
+    flexShrink: 0,
   },
   image: {
     width: '100%',
@@ -121,24 +126,24 @@ const styles = {
     objectFit: 'cover',
     display: 'block',
   },
+  cardContent: {
+    flex: 1,
+    minWidth: 0,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '8px',
+  },
   removeBtn: {
-    position: 'absolute',
-    top: '10px',
-    right: '10px',
     background: '#ef4444',
     color: '#fff',
     border: 'none',
     borderRadius: '999px',
-    padding: '6px 10px',
+    padding: '8px 16px',
     fontWeight: 700,
     cursor: 'pointer',
     boxShadow: '0 4px 12px rgba(239,68,68,0.25)',
-  },
-  body: {
-    padding: '12px',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '8px',
+    flexShrink: 0,
+    fontSize: '14px',
   },
   cardLink: {
     textDecoration: 'none',
