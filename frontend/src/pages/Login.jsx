@@ -36,6 +36,9 @@ const Login = () => {
 
   return (
     <main style={styles.page}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Manrope:wght@400;500;600&display=swap');
+      `}</style>
       <div style={styles.card}>
         <div style={styles.header}>
           <h1 style={styles.title}>Welcome back</h1>
@@ -82,6 +85,7 @@ const Login = () => {
             Create an account
           </Link>
         </div>
+        <div style={styles.sideAccent} aria-hidden="true" />
       </div>
     </main>
   );
@@ -95,19 +99,22 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    background: '#f8f9fb',
+    background:
+      'radial-gradient(circle at 12% 8%, rgba(201, 204, 187, 0.45), transparent 55%), radial-gradient(circle at 86% 4%, rgba(116, 135, 114, 0.25), transparent 45%), linear-gradient(160deg, #f7f5ee 0%, #eceee2 48%, #f7f4ef 100%)',
     padding: '32px 16px 48px',
     color: '#1f2937',
-    fontFamily: 'Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+    fontFamily: "'Manrope', sans-serif",
   },
   card: {
     width: '100%',
     maxWidth: '420px',
     background: '#ffffff',
-    border: '1px solid #e5e7eb',
-    borderRadius: '14px',
+    border: '1px solid rgba(33, 81, 34, 0.14)',
+    borderRadius: '18px',
     padding: '28px',
-    boxShadow: '0 20px 50px rgba(0,0,0,0.08)',
+    boxShadow: '0 24px 50px rgba(33, 81, 34, 0.18)',
+    position: 'relative',
+    overflow: 'hidden',
   },
   header: {
     marginBottom: '18px',
@@ -116,11 +123,12 @@ const styles = {
     margin: 0,
     fontSize: '28px',
     fontWeight: 700,
-    color: '#111827',
+    color: '#215122',
+    fontFamily: "'Fraunces', serif",
   },
   subtitle: {
     margin: '6px 0 0',
-    color: '#6b7280',
+    color: 'rgba(33, 81, 34, 0.7)',
     fontSize: '14px',
   },
   form: {
@@ -133,14 +141,14 @@ const styles = {
     flexDirection: 'column',
     gap: '6px',
     fontSize: '14px',
-    color: '#374151',
+    color: '#324035',
   },
   input: {
     height: '44px',
     borderRadius: '10px',
-    border: '1px solid #e5e7eb',
+    border: '1px solid rgba(33, 81, 34, 0.2)',
     background: '#ffffff',
-    color: '#111827',
+    color: '#1c231f',
     padding: '0 12px',
     fontSize: '14px',
     outline: 'none',
@@ -148,21 +156,21 @@ const styles = {
   },
   button: {
     height: '46px',
-    borderRadius: '12px',
+    borderRadius: '999px',
     border: 'none',
-    background: 'linear-gradient(135deg, #ef4444, #dc2626)',
+    background: 'linear-gradient(135deg, #215122, #748772)',
     color: '#fff',
     fontWeight: 600,
     fontSize: '15px',
     cursor: 'pointer',
     marginTop: '6px',
     transition: 'transform 0.1s ease, box-shadow 0.2s ease',
-    boxShadow: '0 10px 30px rgba(239,68,68,0.25)',
+    boxShadow: '0 12px 22px rgba(33, 81, 34, 0.25)',
   },
   error: {
-    background: '#fef2f2',
-    color: '#b91c1c',
-    border: '1px solid #fecdd3',
+    background: 'rgba(224, 46, 53, 0.12)',
+    color: '#8b1d22',
+    border: '1px solid rgba(224, 46, 53, 0.3)',
     borderRadius: '10px',
     padding: '10px 12px',
     fontSize: '13px',
@@ -170,11 +178,22 @@ const styles = {
   footer: {
     marginTop: '16px',
     fontSize: '14px',
-    color: '#4b5563',
+    color: '#324035',
   },
   link: {
-    color: '#dc2626',
+    color: '#215122',
     textDecoration: 'none',
     fontWeight: 600,
+  },
+  sideAccent: {
+    position: 'absolute',
+    right: '-40px',
+    top: '20%',
+    width: '120px',
+    height: '120px',
+    borderRadius: '28px',
+    background: 'linear-gradient(135deg, rgba(33, 81, 34, 0.2), rgba(224, 46, 53, 0.18))',
+    transform: 'rotate(12deg)',
+    pointerEvents: 'none',
   },
 };

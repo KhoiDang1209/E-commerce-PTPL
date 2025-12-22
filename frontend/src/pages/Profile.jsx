@@ -510,6 +510,9 @@ const Profile = () => {
   return (
     <>
       <Navbar />
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Manrope:wght@400;500;600&display=swap');
+      `}</style>
 
       <div style={styles.container}>
         <h1 style={styles.title}>Your Profile</h1>
@@ -977,26 +980,30 @@ export default Profile;
 /* CSS-IN-JS STYLES */
 const styles = {
   container: {
-    padding: "40px 80px",
-    backgroundColor: "#fafafa",
-    minHeight: "100vh"
+    padding: "36px 64px 64px",
+    background:
+      "radial-gradient(circle at 12% 8%, rgba(201, 204, 187, 0.45), transparent 55%), radial-gradient(circle at 86% 4%, rgba(116, 135, 114, 0.25), transparent 45%), linear-gradient(160deg, #f7f5ee 0%, #eceee2 48%, #f7f4ef 100%)",
+    minHeight: "100vh",
+    fontFamily: "'Manrope', sans-serif"
   },
 
   title: {
-    fontSize: "2.4rem",
+    fontSize: "2.2rem",
     fontWeight: "700",
-    marginBottom: "30px",
-    color: "#111"
+    marginBottom: "26px",
+    color: "#215122",
+    fontFamily: "'Fraunces', serif"
   },
 
   card: {
     background: "#fff",
-    padding: "30px",
-    borderRadius: "14px",
+    padding: "28px",
+    borderRadius: "18px",
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
+    boxShadow: "0 18px 40px rgba(33, 81, 34, 0.12)",
+    border: "1px solid rgba(33, 81, 34, 0.12)",
     marginBottom: "40px"
   },
 
@@ -1017,11 +1024,12 @@ const styles = {
   avatarContainer: {
     width: "80px",
     height: "80px",
-    background: "#e5e7eb",
+    background: "linear-gradient(135deg, rgba(33, 81, 34, 0.12), rgba(116, 135, 114, 0.35))",
     borderRadius: "50%",
     display: "flex",
     justifyContent: "center",
-    alignItems: "center"
+    alignItems: "center",
+    border: "1px solid rgba(33, 81, 34, 0.2)"
   },
 
   avatarIcon: {
@@ -1031,7 +1039,7 @@ const styles = {
   avatarName: {
     fontSize: "1.1rem",
     fontWeight: 700,
-    color: "#111",
+    color: "#1c231f",
     textAlign: "center"
   },
 
@@ -1045,17 +1053,17 @@ const styles = {
   email: {
     margin: "5px 0",
     fontSize: "1rem",
-    color: "#555"
+    color: "#1c231f"
   },
 
   birthDate: {
     fontSize: "0.9rem",
-    color: "#777"
+    color: "rgba(33, 81, 34, 0.7)"
   },
 
   role: {
     fontSize: "0.95rem",
-    color: "#4b5563",
+    color: "#324035",
     fontWeight: 600
   },
 
@@ -1067,18 +1075,19 @@ const styles = {
 
   editBtn: {
     padding: "10px 18px",
-    background: "linear-gradient(90deg, #ef4444, #dc2626)",
+    background: "linear-gradient(135deg, #215122, #748772)",
     border: "none",
     color: "#fff",
     fontWeight: "600",
-    borderRadius: "8px",
-    cursor: "pointer"
+    borderRadius: "999px",
+    cursor: "pointer",
+    boxShadow: "0 10px 18px rgba(33, 81, 34, 0.2)"
   },
 
   input: {
     padding: "10px",
-    borderRadius: "8px",
-    border: "1px solid #ddd",
+    borderRadius: "10px",
+    border: "1px solid rgba(33, 81, 34, 0.2)",
     fontSize: "1rem"
   },
 
@@ -1090,19 +1099,21 @@ const styles = {
 
   saveBtn: {
     padding: "10px 16px",
-    background: "linear-gradient(90deg, #16a34a, #15803d)",
+    background: "linear-gradient(135deg, #215122, #748772)",
     border: "none",
     color: "#fff",
-    borderRadius: "8px",
-    cursor: "pointer"
+    borderRadius: "999px",
+    cursor: "pointer",
+    boxShadow: "0 10px 18px rgba(33, 81, 34, 0.2)"
   },
 
   cancelBtn: {
     padding: "10px 16px",
-    background: "#ddd",
-    border: "none",
-    borderRadius: "8px",
-    cursor: "pointer"
+    background: "#fff",
+    border: "1px solid rgba(33, 81, 34, 0.2)",
+    borderRadius: "999px",
+    cursor: "pointer",
+    color: "#324035"
   },
 
   section: {
@@ -1110,18 +1121,21 @@ const styles = {
   },
 
   sectionTitle: {
-    fontSize: "1.6rem",
-    marginBottom: "16px"
+    fontSize: "1.5rem",
+    marginBottom: "16px",
+    color: "#215122",
+    fontFamily: "'Fraunces', serif"
   },
 
   placeholderBox: {
     background: "#fff",
-    borderRadius: "12px",
+    borderRadius: "16px",
     padding: "20px 24px",
     textAlign: "left",
-    color: "#4b5563",
+    color: "#324035",
     fontSize: "0.95rem",
-    boxShadow: "0 2px 12px rgba(0,0,0,0.05)"
+    boxShadow: "0 12px 24px rgba(33, 81, 34, 0.08)",
+    border: "1px solid rgba(33, 81, 34, 0.12)"
   },
 
   // ---------------------------------------
@@ -1129,9 +1143,10 @@ const styles = {
   // ---------------------------------------
   gameCard: {
     background: "#fff",
-    borderRadius: "12px",
+    borderRadius: "16px",
     padding: "16px",
-    boxShadow: "0 2px 10px rgba(0,0,0,0.05)",
+    boxShadow: "0 10px 22px rgba(33, 81, 34, 0.08)",
+    border: "1px solid rgba(33, 81, 34, 0.12)",
     display: "flex",
     flexDirection: "column",
     gap: "10px"
@@ -1139,51 +1154,54 @@ const styles = {
 
   removeBtn: {
     padding: "8px 12px",
-    background: "#ef4444",
+    background: "#e02e35",
     color: "#fff",
     border: "none",
-    borderRadius: "6px",
-    cursor: "pointer"
+    borderRadius: "999px",
+    cursor: "pointer",
+    fontWeight: 600,
+    boxShadow: "0 8px 16px rgba(224, 46, 53, 0.2)"
   },
 
   secondarySmallBtn: {
     padding: "8px 12px",
-    background: "#f3f4f6",
-    color: "#111",
-    border: "1px solid #e5e7eb",
-    borderRadius: "6px",
-    cursor: "pointer"
+    background: "#fff",
+    color: "#215122",
+    border: "1px solid rgba(33, 81, 34, 0.25)",
+    borderRadius: "999px",
+    cursor: "pointer",
+    fontWeight: 600
   },
 
   errorMessage: {
     padding: "10px",
-    background: "#fee2e2",
-    color: "#dc2626",
+    background: "rgba(224, 46, 53, 0.12)",
+    color: "#8b1d22",
     borderRadius: "8px",
     fontSize: "0.9rem",
     marginBottom: "10px",
-    border: "1px solid #fecaca"
+    border: "1px solid rgba(224, 46, 53, 0.3)"
   },
 
   successMessage: {
     padding: "10px",
-    background: "#d1fae5",
-    color: "#059669",
+    background: "rgba(33, 81, 34, 0.12)",
+    color: "#1f3b27",
     borderRadius: "8px",
     fontSize: "0.9rem",
     marginBottom: "10px",
-    border: "1px solid #a7f3d0"
+    border: "1px solid rgba(33, 81, 34, 0.2)"
   },
 
   // References / multiselect
   sectionLabel: {
     fontWeight: 600,
     margin: '4px 0 6px',
-    color: '#111827',
+    color: '#1c231f',
     fontSize: '0.9rem',
   },
   selectShell: {
-    border: '1px solid #e5e7eb',
+    border: '1px solid rgba(33, 81, 34, 0.2)',
     borderRadius: '10px',
     padding: '10px',
     background: '#fff',
@@ -1201,12 +1219,12 @@ const styles = {
     flex: 1,
   },
   placeholder: {
-    color: '#9ca3af',
+    color: 'rgba(33, 81, 34, 0.5)',
     fontSize: '14px',
   },
   caret: {
     marginLeft: '8px',
-    color: '#6b7280',
+    color: '#215122',
     fontSize: '12px',
   },
   dropdown: {
@@ -1215,12 +1233,12 @@ const styles = {
     left: 0,
     right: 0,
     marginTop: '6px',
-    border: '1px solid #e5e7eb',
+    border: '1px solid rgba(33, 81, 34, 0.2)',
     borderRadius: '10px',
     background: '#fff',
     maxHeight: '220px',
     overflowY: 'auto',
-    boxShadow: '0 12px 30px rgba(0,0,0,0.08)',
+    boxShadow: '0 12px 30px rgba(33, 81, 34, 0.12)',
     zIndex: 10,
   },
   dropdownItem: {
@@ -1229,13 +1247,13 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-    color: '#111827',
-    borderBottom: '1px solid #f3f4f6',
+    color: '#1c231f',
+    borderBottom: '1px solid rgba(33, 81, 34, 0.1)',
     fontSize: '0.9rem',
   },
   dropdownItemActive: {
-    background: '#fef2f2',
-    color: '#b91c1c',
+    background: 'rgba(33, 81, 34, 0.1)',
+    color: '#215122',
   },
   check: {
     marginLeft: '8px',
@@ -1245,8 +1263,8 @@ const styles = {
     display: 'inline-flex',
     alignItems: 'center',
     gap: '6px',
-    background: '#fee2e2',
-    color: '#b91c1c',
+    background: 'rgba(224, 46, 53, 0.12)',
+    color: '#9b2026',
     borderRadius: '999px',
     padding: '4px 8px',
     fontSize: '12px',
@@ -1255,7 +1273,7 @@ const styles = {
     border: 'none',
     background: 'transparent',
     cursor: 'pointer',
-    color: '#b91c1c',
+    color: '#9b2026',
     fontSize: '12px',
     lineHeight: 1,
   },
@@ -1315,17 +1333,19 @@ const styles = {
     background: '#fff',
     borderRadius: '12px',
     padding: '20px',
-    boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+    boxShadow: '0 10px 22px rgba(33, 81, 34, 0.1)',
+    border: '1px solid rgba(33, 81, 34, 0.12)',
   },
   ordersMessage: {
     padding: '12px',
-    color: '#4b5563',
+    color: 'rgba(33, 81, 34, 0.7)',
   },
   ordersError: {
     padding: '12px',
-    color: '#dc2626',
-    background: '#fee2e2',
-    borderRadius: '8px',
+    color: '#8b1d22',
+    background: 'rgba(224, 46, 53, 0.12)',
+    borderRadius: '10px',
+    border: '1px solid rgba(224, 46, 53, 0.3)',
   },
   ordersList: {
     display: 'flex',
@@ -1337,8 +1357,8 @@ const styles = {
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: '12px',
-    border: '1px solid #e5e7eb',
-    borderRadius: '8px',
+    border: '1px solid rgba(33, 81, 34, 0.12)',
+    borderRadius: '12px',
   },
   orderLeft: {
     display: 'flex',
@@ -1347,15 +1367,15 @@ const styles = {
   },
   orderId: {
     fontWeight: 700,
-    color: '#111827',
+    color: '#1c231f',
   },
   orderMeta: {
     fontSize: '0.9rem',
-    color: '#6b7280',
+    color: 'rgba(33, 81, 34, 0.7)',
   },
   orderRight: {
     fontWeight: 700,
-    color: '#111827',
+    color: '#1c231f',
   },
   orderTotal: {
     fontSize: '1rem',

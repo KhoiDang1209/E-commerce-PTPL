@@ -74,6 +74,9 @@ const SearchGames = () => {
   return (
     <>
       <Navbar />
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Manrope:wght@400;500;600&display=swap');
+      `}</style>
       <main style={styles.container}>
         <div style={styles.searchSection}>
           <h1 style={styles.title}>Search Games</h1>
@@ -102,7 +105,7 @@ const SearchGames = () => {
         {!loading && !error && searchParams.get('q') && (
           <>
             <div style={styles.resultsHeader}>
-              <h2>Search Results for "{searchParams.get('q')}"</h2>
+              <h2 style={styles.resultsTitle}>Search Results for "{searchParams.get('q')}"</h2>
               <span style={styles.count}>{games.length} {games.length === 1 ? 'game' : 'games'} found</span>
             </div>
 
@@ -166,79 +169,96 @@ const SearchGames = () => {
 
 const styles = {
   container: {
-    maxWidth: '1200px',
-    margin: '0 auto',
-    padding: '24px',
+    maxWidth: '100%',
+    margin: 0,
+    padding: '28px 64px 48px',
+    fontFamily: "'Manrope', sans-serif",
+    minHeight: '100vh',
+    background:
+      'radial-gradient(circle at 12% 8%, rgba(201, 204, 187, 0.45), transparent 55%), radial-gradient(circle at 86% 4%, rgba(116, 135, 114, 0.25), transparent 45%), linear-gradient(160deg, #f7f5ee 0%, #eceee2 48%, #f7f4ef 100%)',
   },
   searchSection: {
     marginBottom: '32px',
+    maxWidth: '1100px',
+    marginLeft: 'auto',
+    marginRight: 'auto',
   },
   title: {
     fontSize: '2rem',
     fontWeight: '700',
     marginBottom: '16px',
-    color: '#1a1a1a',
+    color: '#215122',
+    fontFamily: "'Fraunces', serif",
   },
   searchForm: {
     display: 'flex',
     gap: '12px',
     marginBottom: '24px',
+    alignItems: 'center',
   },
   searchInput: {
     flex: 1,
     padding: '12px 16px',
     fontSize: '1rem',
-    border: '2px solid #ddd',
-    borderRadius: '8px',
+    border: '1px solid rgba(33, 81, 34, 0.2)',
+    borderRadius: '12px',
     outline: 'none',
-    transition: 'border-color 0.2s',
-  },
-  searchInputFocus: {
-    borderColor: '#3b82f6',
+    transition: 'border-color 0.2s, box-shadow 0.2s',
+    background: '#fff',
   },
   searchButton: {
     padding: '12px 24px',
     fontSize: '1rem',
     fontWeight: '600',
-    background: '#3b82f6',
+    background: 'linear-gradient(135deg, #215122, #748772)',
     color: '#fff',
     border: 'none',
-    borderRadius: '8px',
+    borderRadius: '999px',
     cursor: 'pointer',
-    transition: 'background 0.2s',
+    transition: 'transform 0.2s, box-shadow 0.2s',
+    boxShadow: '0 10px 18px rgba(33, 81, 34, 0.2)',
   },
   resultsHeader: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: '24px',
+    maxWidth: '1100px',
+    marginLeft: 'auto',
+    marginRight: 'auto',
+  },
+  resultsTitle: {
+    margin: 0,
+    fontSize: '1.3rem',
+    color: '#215122',
+    fontFamily: "'Fraunces', serif",
   },
   count: {
-    color: '#666',
+    color: 'rgba(33, 81, 34, 0.7)',
     fontSize: '0.9rem',
   },
   gamesGrid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
     gap: '20px',
+    maxWidth: '1100px',
+    marginLeft: 'auto',
+    marginRight: 'auto',
   },
   gameCard: {
     background: '#fff',
-    borderRadius: '8px',
+    borderRadius: '14px',
     overflow: 'hidden',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+    border: '1px solid rgba(33, 81, 34, 0.12)',
+    boxShadow: '0 10px 22px rgba(33, 81, 34, 0.08)',
     cursor: 'pointer',
     transition: 'transform 0.2s, box-shadow 0.2s',
-  },
-  gameCardHover: {
-    transform: 'translateY(-4px)',
-    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
   },
   gameImage: {
     position: 'relative',
     width: '100%',
     paddingTop: '75%',
-    background: '#f0f0f0',
+    background: '#f7f4ef',
     overflow: 'hidden',
   },
   image: {
@@ -254,7 +274,7 @@ const styles = {
     top: '8px',
     right: '8px',
     background: 'rgba(255, 255, 255, 0.9)',
-    border: 'none',
+    border: '1px solid rgba(33, 81, 34, 0.15)',
     borderRadius: '50%',
     width: '36px',
     height: '36px',
@@ -263,7 +283,7 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    transition: 'background 0.2s',
+    transition: 'background 0.2s, transform 0.2s',
   },
   gameInfo: {
     padding: '12px',
@@ -272,7 +292,7 @@ const styles = {
     fontSize: '0.95rem',
     fontWeight: '600',
     margin: '0 0 8px 0',
-    color: '#1a1a1a',
+    color: '#1c231f',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
@@ -284,35 +304,42 @@ const styles = {
   },
   originalPrice: {
     fontSize: '0.85rem',
-    color: '#999',
+    color: 'rgba(33, 81, 34, 0.5)',
     textDecoration: 'line-through',
   },
   discount: {
     fontSize: '0.85rem',
-    background: '#10b981',
+    background: '#e02e35',
     color: '#fff',
     padding: '2px 6px',
-    borderRadius: '4px',
+    borderRadius: '999px',
     fontWeight: '600',
   },
   finalPrice: {
     fontSize: '1rem',
     fontWeight: '700',
-    color: '#1a1a1a',
+    color: '#215122',
   },
   message: {
     textAlign: 'center',
     padding: '48px',
-    color: '#666',
+    color: 'rgba(33, 81, 34, 0.7)',
     fontSize: '1.1rem',
+    maxWidth: '1100px',
+    marginLeft: 'auto',
+    marginRight: 'auto',
   },
   error: {
     textAlign: 'center',
     padding: '24px',
-    color: '#dc2626',
-    background: '#fee2e2',
-    borderRadius: '8px',
+    color: '#8b1d22',
+    background: 'rgba(224, 46, 53, 0.12)',
+    borderRadius: '12px',
+    border: '1px solid rgba(224, 46, 53, 0.3)',
     marginBottom: '24px',
+    maxWidth: '1100px',
+    marginLeft: 'auto',
+    marginRight: 'auto',
   },
 };
 
