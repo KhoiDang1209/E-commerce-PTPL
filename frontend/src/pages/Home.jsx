@@ -771,6 +771,27 @@ const Home = () => {
           <div>
             <h1 style={styles.heading}>Featured & Trending</h1>
           </div>
+          <button
+            style={{
+              width: '54px',
+              height: '54px',
+              borderRadius: '16px',
+              background: 'linear-gradient(135deg, #215122, #748772)',
+              boxShadow: '0 12px 24px rgba(33, 81, 34, 0.22)',
+              border: 'none',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '24px',
+              color: '#fff',
+              fontWeight: 700,
+            }}
+            onClick={() => navigate(-1)}
+            aria-label="Go back"
+          >
+            ←
+          </button>
         </div>
         {gamesError && <div style={styles.error}>{gamesError}</div>}
         {gamesLoading && <div style={styles.badge}>Loading...</div>}

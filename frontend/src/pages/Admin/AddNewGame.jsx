@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Navbar from '../../components/layout/Navbar';
 import api from '../../services/api';
 import { referenceService } from '../../services/referenceService';
@@ -84,6 +85,7 @@ const MultiSelect = ({ label, options = [], selected = [], onChange, placeholder
 };
 
 const AddNewGame = () => {
+  const navigate = useNavigate();
   const [form, setForm] = useState({
     name: '',
     price_final: '',
@@ -219,10 +221,24 @@ const AddNewGame = () => {
       `}</style>
       <main style={styles.page}>
         <form style={styles.card} onSubmit={handleSubmit}>
-          <h1 style={styles.title}>Add New Game</h1>
-          <p style={styles.subtitle}>
-            Fill in the details below to publish a new game to the store.
-          </p>
+          <div style={styles.header}>
+            <div>
+              <h1 style={styles.title}>Add New Game</h1>
+              <p style={styles.subtitle}>
+                Fill in the details below to publish a new game to the store.
+              </p>
+            </div>
+            <button
+              style={styles.backButton}
+              onClick={(e) => {
+                e.preventDefault();
+                navigate('/admin');
+              }}
+              type="button"
+            >
+              Back to Dashboard
+            </button>
+          </div>
 
           <div style={styles.field}>
             <label style={styles.label}>Game name</label>
@@ -395,6 +411,23 @@ const styles = {
     boxShadow: '0 18px 40px rgba(33, 81, 34, 0.12)',
     border: '1px solid rgba(33, 81, 34, 0.12)',
   },
+  header: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '16px',
+  },
+  backButton: {
+    padding: '10px 20px',
+    borderRadius: '999px',
+    border: '1px solid rgba(33, 81, 34, 0.25)',
+    background: '#fff',
+    color: '#215122',
+    cursor: 'pointer',
+    fontWeight: 600,
+    fontSize: '14px',
+    boxShadow: '0 8px 16px rgba(33, 81, 34, 0.12)',
+  },
   title: {
     fontSize: '26px',
     fontWeight: 700,
@@ -405,7 +438,7 @@ const styles = {
   subtitle: {
     fontSize: '14px',
     color: 'rgba(33, 81, 34, 0.7)',
-    margin: 0,
+    margin: '6px 0 0 0',
   },
   field: {
     display: 'flex',

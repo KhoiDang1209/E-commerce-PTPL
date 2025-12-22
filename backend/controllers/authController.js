@@ -374,6 +374,54 @@ const logout = async (req, res) => {
   }
 };
 
+/**
+ * Change user password
+ */
+const { validatePasswordStrength } = require('../models/UserModel');
+const changePassword = async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+  const userId = req.session?.user?.id || req.session?.userId; // read from session user object
+
+  if (!currentPassword || !newPassword) {
+    return sendError(res, 'Current and new passwords are required', 'VALIDATION_ERROR', 400);
+  }
+
+  if (!userId) {
+    return sendError(res, 'Not authenticated', 'NOT_AUTHENTICATED', 401);
+  }
+
+  if (!validatePasswordStrength(newPassword)) {
+    return sendError(
+      res,
+      'New password does not meet strength requirements',
+      'WEAK_PASSWORD',
+      400
+    );
+  }
+
+  try {
+    const user = await UserModel.findById(userId);
+
+    if (!user) {
+      return sendError(res, 'User not found', 'USER_NOT_FOUND', 404);
+    }
+
+    const isMatch = await UserModel.comparePassword(currentPassword, user.password_hash);
+
+    if (!isMatch) {
+      return sendError(res, 'Current password is incorrect', 'INVALID_PASSWORD', 401);
+    }
+
+    const hashedPassword = await UserModel.hashPassword(newPassword);
+    await UserModel.updatePassword(userId, hashedPassword);
+
+    return sendSuccess(res, null, 'Password changed successfully');
+  } catch (error) {
+    console.error('Change password error:', error);
+    return sendError(res, 'Unable to change password. Please try again later.', 'CHANGE_PASSWORD_FAILED', 500);
+  }
+};
+
 module.exports = {
   register,
   login,
@@ -381,4 +429,5 @@ module.exports = {
   getMe,
   verifyOTP,
   resendOTP,
+  changePassword,
 };

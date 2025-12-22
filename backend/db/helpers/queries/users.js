@@ -30,6 +30,16 @@ const usersQueries = {
   },
 
   /**
+   * Get full user row by ID (includes password_hash)
+   * @param {number} userId
+   * @returns {Promise<Object|null>}
+   */
+  getUserByIdFull: async (userId) => {
+    const queryText = 'SELECT * FROM users WHERE id = $1';
+    return await queryOne(queryText, [userId]);
+  },
+
+  /**
    * Get user by email
    * @param {string} email - User email
    * @returns {Promise<Object|null>} User object or null

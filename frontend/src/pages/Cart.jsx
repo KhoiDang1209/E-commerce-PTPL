@@ -1,7 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/layout/Navbar';
 import { useCart } from '../context/CartContext';
+import { gameService } from '../services/gameService';
+import GameCarousel from '../components/GameCarousel';
 import '../styles/Cart.css';
 
 const Cart = () => {
@@ -13,6 +15,8 @@ const Cart = () => {
   const [couponCode, setCouponCode] = useState('');
   const [selectedAppIds, setSelectedAppIds] = useState(new Set());
   const [hasUserSelection, setHasUserSelection] = useState(false);
+  const [relatedGames, setRelatedGames] = useState([]);
+  const [loadingRelatedGames, setLoadingRelatedGames] = useState(false);
 
   useEffect(() => {
     setSelectedAppIds((prev) => {
@@ -51,6 +55,95 @@ const Cart = () => {
   const selectedCount = selectedItems.length;
   const allSelected = items.length > 0 && selectedCount === items.length;
 
+  // Fetch related games based on cart items
+  useEffect(() => {
+    if (!items || items.length === 0) {
+      setRelatedGames([]);
+      return;
+    }
+
+    let cancelled = false;
+
+    const fetchRelatedGames = async () => {
+      setLoadingRelatedGames(true);
+      try {
+        // Get the first cart item's app_id and fetch its details to get genres
+        const firstItem = items[0];
+        if (!firstItem?.app_id) {
+          setRelatedGames([]);
+          return;
+        }
+
+        // Fetch game details to get genres
+        const gameRes = await gameService.getGameById(firstItem.app_id);
+        const gameData = gameRes?.data?.game || gameRes?.game || gameRes?.data || gameRes;
+        const genresData = gameData?.genres_json || gameData?.genres || [];
+        
+        let genreId = null;
+        if (Array.isArray(genresData) && genresData.length > 0) {
+          const firstGenre = genresData[0];
+          genreId = typeof firstGenre === 'object' && firstGenre?.id ? firstGenre.id : null;
+        }
+
+        if (!genreId) {
+          // Fallback: get recommended games if no genre available
+          const recRes = await gameService.getRecommendedGames();
+          const gamesList = recRes?.data?.games || recRes?.games || [];
+          const cartAppIds = new Set(items.map((item) => item.app_id));
+          const filtered = gamesList
+            .filter((g) => g.app_id && !cartAppIds.has(g.app_id))
+            .slice(0, 15);
+          
+          if (!cancelled) {
+            setRelatedGames(filtered);
+          }
+          return;
+        }
+
+        // Fetch games by genre
+        const res = await gameService.getGamesByGenre(genreId, {
+          limit: 30,
+          offset: 0,
+          sortBy: 'recommendations_total',
+          order: 'DESC',
+        });
+
+        const gamesList = res?.data?.games || res?.games || [];
+        const cartAppIds = new Set(items.map((item) => item.app_id));
+        
+        // Filter out cart items and normalize results
+        const filtered = gamesList
+          .filter((g) => g.app_id && !cartAppIds.has(g.app_id))
+          .slice(0, 15)
+          .map((g) => ({
+            ...g,
+            app_id: g.app_id,
+            name: g.name || g.title,
+            header_image: g.header_image || g.image || g.thumbnail,
+          }));
+
+        if (!cancelled) {
+          setRelatedGames(filtered);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          console.error('Error fetching related games for cart:', err);
+          setRelatedGames([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoadingRelatedGames(false);
+        }
+      }
+    };
+
+    fetchRelatedGames();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [items]);
+
   return (
     <>
       <Navbar />
@@ -61,7 +154,23 @@ const Cart = () => {
               <h1 className="cart-title">Shopping Cart</h1>
               <p className="cart-subtitle">Curate your library before checkout.</p>
             </div>
-            <div className="cart-accent" aria-hidden="true" />
+            <button
+              className="cart-accent"
+              onClick={() => navigate(-1)}
+              aria-label="Go back"
+              style={{
+                border: 'none',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '24px',
+                color: '#fff',
+                fontWeight: 700,
+              }}
+            >
+              ←
+            </button>
           </div>
 
           {loading ? (
@@ -213,6 +322,16 @@ const Cart = () => {
                   )}
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* You may also like section */}
+          {relatedGames.length > 0 && (
+            <div style={{ marginTop: '40px' }}>
+              <GameCarousel
+                games={relatedGames}
+                title="You may also like"
+              />
             </div>
           )}
         </div>

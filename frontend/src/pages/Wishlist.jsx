@@ -1,10 +1,11 @@
 import React, { useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import Navbar from '../components/layout/Navbar';
 import { useWishlist } from '../context/WishlistContext';
 import '../styles/Wishlist.css';
 
 const Wishlist = () => {
+  const navigate = useNavigate();
   const { wishlist, loading, removeFromWishlist } = useWishlist();
 
   const normalized = useMemo(() => {
@@ -45,7 +46,23 @@ const Wishlist = () => {
                 Save games you're excited to play next.
               </p>
             </div>
-            <div className="wishlist-accent" aria-hidden="true" />
+            <button
+              className="wishlist-accent"
+              onClick={() => navigate(-1)}
+              aria-label="Go back"
+              style={{
+                border: 'none',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '24px',
+                color: '#fff',
+                fontWeight: 700,
+              }}
+            >
+              ←
+            </button>
           </div>
 
           {loading ? (

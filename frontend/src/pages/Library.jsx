@@ -121,7 +121,23 @@ const Library = () => {
               <h1 className="library-title">My Library</h1>
               <p className="library-subtitle">All the games you own, ready to play.</p>
             </div>
-            <div className="library-accent" aria-hidden="true" />
+            <button
+              className="library-accent"
+              onClick={() => navigate(-1)}
+              aria-label="Go back"
+              style={{
+                border: 'none',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '24px',
+                color: '#fff',
+                fontWeight: 700,
+              }}
+            >
+              ←
+            </button>
           </div>
 
           {loading && (
@@ -150,124 +166,125 @@ const Library = () => {
             <>
               <div className="library-list">
                 {games.map((game, index) => (
-                  <div
-                    key={game.app_id}
-                    className="library-card"
-                    style={{ '--delay': `${index * 70}ms` }}
-                  >
+                  <React.Fragment key={game.app_id}>
                     <div
-                      className="library-clickable"
-                      onClick={() => navigate(`/game/${game.app_id}`)}
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          navigate(`/game/${game.app_id}`);
-                        }
-                      }}
+                      className="library-card"
+                      style={{ '--delay': `${index * 70}ms` }}
                     >
-                      <div className="library-image">
-                        <img
-                          src={game.header_image || '/placeholder-game.jpg'}
-                          alt={game.name}
-                          className="library-image-img"
-                        />
+                      <div
+                        className="library-clickable"
+                        onClick={() => navigate(`/game/${game.app_id}`)}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            navigate(`/game/${game.app_id}`);
+                          }
+                        }}
+                      >
+                        <div className="library-image">
+                          <img
+                            src={game.header_image || '/placeholder-game.jpg'}
+                            alt={game.name}
+                            className="library-image-img"
+                          />
+                        </div>
+                      </div>
+                      <div className="library-content">
+                        <h3 className="library-name">{game.name}</h3>
+                        <button
+                          className="library-review-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openReviewPanel(game);
+                          }}
+                          type="button"
+                        >
+                          {selectedGame && selectedGame.app_id === game.app_id
+                            ? 'Editing Review'
+                            : 'Write a Review'}
+                        </button>
                       </div>
                     </div>
-                    <div className="library-content">
-                      <h3 className="library-name">{game.name}</h3>
-                      <button
-                        className="library-review-btn"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          openReviewPanel(game);
-                        }}
-                        type="button"
-                      >
-                        {selectedGame && selectedGame.app_id === game.app_id
-                          ? 'Editing Review'
-                          : 'Write a Review'}
-                      </button>
-                    </div>
-                  </div>
+
+                    {selectedGame && selectedGame.app_id === game.app_id && (
+                      <section className="library-review">
+                        <h2 className="library-review-title">
+                          {`Your Review for ${selectedGame.name}`}
+                        </h2>
+                        <form onSubmit={handleSubmitReview} className="library-review-form">
+                          <div className="library-review-row">
+                            <span className="library-review-label">Your recommendation:</span>
+                            <div className="library-toggle-group">
+                              <button
+                                type="button"
+                                className={`library-toggle-btn${
+                                  reviewRecommended ? ' is-active' : ''
+                                }`}
+                                onClick={() => setReviewRecommended(true)}
+                              >
+                                Recommend
+                              </button>
+                              <button
+                                type="button"
+                                className={`library-toggle-btn${
+                                  !reviewRecommended ? ' is-active' : ''
+                                }`}
+                                onClick={() => setReviewRecommended(false)}
+                              >
+                                Not Recommended
+                              </button>
+                            </div>
+                          </div>
+
+                          <textarea
+                            className="library-review-textarea"
+                            rows={4}
+                            placeholder="Share your thoughts about this game..."
+                            value={reviewText}
+                            onChange={(e) => setReviewText(e.target.value)}
+                          />
+
+                          <div className="library-review-actions">
+                            <button
+                              type="button"
+                              className="library-cancel-btn"
+                              onClick={() => {
+                                setSelectedGame(null);
+                                setMyReview(null);
+                                setReviewText('');
+                                setReviewRecommended(true);
+                                setReviewError('');
+                                setReviewSuccess('');
+                              }}
+                            >
+                              Close
+                            </button>
+                            <button
+                              type="submit"
+                              className="library-submit-btn"
+                              disabled={reviewLoading}
+                            >
+                              {reviewLoading
+                                ? 'Saving...'
+                                : myReview
+                                ? 'Update Review'
+                                : 'Submit Review'}
+                            </button>
+                          </div>
+
+                          {reviewError && (
+                            <div className="library-review-error">{reviewError}</div>
+                          )}
+                          {reviewSuccess && (
+                            <div className="library-review-success">{reviewSuccess}</div>
+                          )}
+                        </form>
+                      </section>
+                    )}
+                  </React.Fragment>
                 ))}
               </div>
-
-              {selectedGame && (
-                <section className="library-review">
-                  <h2 className="library-review-title">
-                    {`Your Review for ${selectedGame.name}`}
-                  </h2>
-                  <form onSubmit={handleSubmitReview} className="library-review-form">
-                    <div className="library-review-row">
-                      <span className="library-review-label">Your recommendation:</span>
-                      <div className="library-toggle-group">
-                        <button
-                          type="button"
-                          className={`library-toggle-btn${
-                            reviewRecommended ? ' is-active' : ''
-                          }`}
-                          onClick={() => setReviewRecommended(true)}
-                        >
-                          Recommend
-                        </button>
-                        <button
-                          type="button"
-                          className={`library-toggle-btn${
-                            !reviewRecommended ? ' is-active' : ''
-                          }`}
-                          onClick={() => setReviewRecommended(false)}
-                        >
-                          Not Recommended
-                        </button>
-                      </div>
-                    </div>
-
-                    <textarea
-                      className="library-review-textarea"
-                      rows={4}
-                      placeholder="Share your thoughts about this game..."
-                      value={reviewText}
-                      onChange={(e) => setReviewText(e.target.value)}
-                    />
-
-                    <div className="library-review-actions">
-                      <button
-                        type="button"
-                        className="library-cancel-btn"
-                        onClick={() => {
-                          setSelectedGame(null);
-                          setMyReview(null);
-                          setReviewText('');
-                          setReviewRecommended(true);
-                          setReviewError('');
-                          setReviewSuccess('');
-                        }}
-                      >
-                        Close
-                      </button>
-                      <button
-                        type="submit"
-                        className="library-submit-btn"
-                        disabled={reviewLoading}
-                      >
-                        {reviewLoading
-                          ? 'Saving...'
-                          : myReview
-                          ? 'Update Review'
-                          : 'Submit Review'}
-                      </button>
-                    </div>
-
-                    {reviewError && (
-                      <div className="library-review-error">{reviewError}</div>
-                    )}
-                    {reviewSuccess && (
-                      <div className="library-review-success">{reviewSuccess}</div>
-                    )}
-                  </form>
-                </section>
-              )}
             </>
           )}
         </div>

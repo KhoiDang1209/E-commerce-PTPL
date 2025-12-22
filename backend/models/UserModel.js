@@ -90,6 +90,46 @@ const checkUserCredentials = async (identifier, password) => {
   };
 };
 
+/**
+ * Find user by ID (full row including password_hash)
+ * @param {number} id
+ * @returns {Promise<Object|null>}
+ */
+const findById = async (id) => {
+  return queries.users.getUserByIdFull(id);
+};
+
+/**
+ * Update user's password
+ * @param {number} userId
+ * @param {string} hashedPassword
+ * @returns {Promise<Object|null>}
+ */
+const updatePassword = async (userId, hashedPassword) => {
+  return queries.users.updateUser(userId, { password_hash: hashedPassword });
+};
+
+/**
+ * Validate password strength
+ * @param {string} password
+ * @returns {boolean} true if password meets criteria
+ */
+const validatePasswordStrength = (password) => {
+  const minLength = 8;
+  const hasUpperCase = /[A-Z]/.test(password);
+  const hasLowerCase = /[a-z]/.test(password);
+  const hasNumber = /[0-9]/.test(password);
+  const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+
+  return (
+    password.length >= minLength &&
+    hasUpperCase &&
+    hasLowerCase &&
+    hasNumber &&
+    hasSpecialChar
+  );
+};
+
 module.exports = {
   hashPassword,
   comparePassword,
@@ -97,4 +137,7 @@ module.exports = {
   findByUsername,
   createUser,
   checkUserCredentials,
+  validatePasswordStrength,
+  findById,
+  updatePassword,
 };

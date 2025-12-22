@@ -1,10 +1,12 @@
 // frontend/src/pages/Profile.jsx
 import React, { useEffect, useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/layout/Navbar.jsx';
 import { userService } from '../services/userService';
 import { ordersService } from '../services/ordersService';
 import { referenceService } from '../services/referenceService';
 import { useAuth } from '../context/AuthContext';
+import ChangePasswordModal from '../components/common/ChangePasswordModal';
 
 // Reusable multi-select dropdown (same behavior as in Register page)
 const MultiSelect = ({ label, options = [], selected = [], onChange, placeholder = 'Select...' }) => {
@@ -84,6 +86,7 @@ const MultiSelect = ({ label, options = [], selected = [], onChange, placeholder
 };
 
 const Profile = () => {
+  const navigate = useNavigate();
   const { user , setUser} = useAuth();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -96,6 +99,7 @@ const Profile = () => {
     country: "",
     preferPlatforms: [],
   });
+  const [changePwdOpen, setChangePwdOpen] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
 
@@ -475,6 +479,10 @@ const Profile = () => {
     }
   };
 
+  const handleChangePasswordClick = () => {
+    setChangePwdOpen(true);
+  };
+
   if (loading) return <div>Loading...</div>;
 
   const displayName = (() => {
@@ -510,12 +518,44 @@ const Profile = () => {
   return (
     <>
       <Navbar />
+      <ChangePasswordModal
+        isOpen={changePwdOpen}
+        onClose={() => setChangePwdOpen(false)}
+        onSubmit={() => {
+          setChangePwdOpen(false);
+          setSuccess('Password changed successfully');
+          setTimeout(() => setSuccess(null), 3000);
+        }}
+      />
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Manrope:wght@400;500;600&display=swap');
       `}</style>
 
       <div style={styles.container}>
-        <h1 style={styles.title}>Your Profile</h1>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+          <h1 style={styles.title}>Your Profile</h1>
+          <button
+            style={{
+              width: '54px',
+              height: '54px',
+              borderRadius: '16px',
+              background: 'linear-gradient(135deg, #215122, #748772)',
+              boxShadow: '0 12px 24px rgba(33, 81, 34, 0.22)',
+              border: 'none',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '24px',
+              color: '#fff',
+              fontWeight: 700,
+            }}
+            onClick={() => navigate(-1)}
+            aria-label="Go back"
+          >
+            ←
+          </button>
+        </div>
 
         <div style={styles.card}>
           <div style={styles.cardLeft}>
@@ -560,6 +600,17 @@ const Profile = () => {
                   onClick={() => setBillingEditing(true)}
                 >
                   Edit billing address
+                </button>
+                <button
+                  onClick={handleChangePasswordClick}
+                  style={{
+                    ...styles.secondarySmallBtn,
+                    marginTop: 8,
+                    background: 'linear-gradient(135deg, #e02e35, #f6b93b)',
+                    color: '#fff',
+                  }}
+                >
+                  Change Password
                 </button>
               </>
             ) : (

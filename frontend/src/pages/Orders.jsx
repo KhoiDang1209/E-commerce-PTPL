@@ -70,7 +70,23 @@ const Orders = () => {
                 <h1 className="orders-title">My Orders</h1>
                 <p className="orders-subtitle">Track your purchases and revisit favorite games.</p>
               </div>
-              <div className="orders-accent" aria-hidden="true" />
+              <button
+                className="orders-accent"
+                onClick={() => navigate(-1)}
+                aria-label="Go back"
+                style={{
+                  border: 'none',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '24px',
+                  color: '#fff',
+                  fontWeight: 700,
+                }}
+              >
+                ←
+              </button>
             </div>
 
             {loading && <div className="orders-message">Loading orders...</div>}

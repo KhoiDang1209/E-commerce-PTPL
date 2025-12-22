@@ -6,6 +6,7 @@ import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
+import GameCarousel from '../components/GameCarousel';
 
 const GameDetail = () => {
   const { appId } = useParams();
@@ -26,6 +27,8 @@ const GameDetail = () => {
   const [reviewLoading, setReviewLoading] = useState(false);
   const [reviewError, setReviewError] = useState('');
   const [reviewSuccess, setReviewSuccess] = useState('');
+  const [relatedGames, setRelatedGames] = useState([]);
+  const [loadingRelatedGames, setLoadingRelatedGames] = useState(false);
 
   const formatPrice = (val) => {
     if (val === null || val === undefined || val === '') return '';
@@ -259,6 +262,74 @@ const GameDetail = () => {
   const categories = toArrayNames(game?.categories || game?.categories_json);
   const publishers = toArrayNames(game?.publishers);
   const developers = toArrayNames(game?.developers);
+  
+  // Extract genre IDs for related games query
+  const genreIds = useMemo(() => {
+    if (!game) return [];
+    const genresData = game.genres_json || game.genres || [];
+    if (Array.isArray(genresData)) {
+      return genresData
+        .map((g) => (typeof g === 'object' && g?.id ? g.id : null))
+        .filter((id) => id !== null && id !== undefined);
+    }
+    return [];
+  }, [game]);
+
+  // Fetch related games based on genres
+  useEffect(() => {
+    if (!game || !game.app_id || genreIds.length === 0) {
+      setRelatedGames([]);
+      return;
+    }
+
+    let cancelled = false;
+
+    const fetchRelatedGames = async () => {
+      setLoadingRelatedGames(true);
+      try {
+        // Use the first genre ID to fetch related games
+        const genreId = genreIds[0];
+        const res = await gameService.getGamesByGenre(genreId, {
+          limit: 20,
+          offset: 0,
+          sortBy: 'recommendations_total',
+          order: 'DESC',
+        });
+
+        const gamesList = res?.data?.games || res?.games || [];
+        
+        // Filter out the current game and normalize results
+        const filtered = gamesList
+          .filter((g) => g.app_id && g.app_id !== game.app_id)
+          .slice(0, 15) // Limit to 15 games for carousel
+          .map((g) => ({
+            ...g,
+            app_id: g.app_id,
+            name: g.name || g.title,
+            header_image: g.header_image || g.image || g.thumbnail,
+          }));
+
+        if (!cancelled) {
+          setRelatedGames(filtered);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          console.error('Error fetching related games:', err);
+          setRelatedGames([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoadingRelatedGames(false);
+        }
+      }
+    };
+
+    fetchRelatedGames();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [game, genreIds]);
 
   const platformLabels = [
     game?.platforms_windows ? 'Windows' : null,
@@ -465,6 +536,29 @@ const GameDetail = () => {
             <>
               <div style={styles.outerRedWrapper}>
               <div style={styles.mainContentWrapper}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '12px' }}>
+                <button
+                  style={{
+                    width: '54px',
+                    height: '54px',
+                    borderRadius: '16px',
+                    background: 'linear-gradient(135deg, #215122, #748772)',
+                    boxShadow: '0 12px 24px rgba(33, 81, 34, 0.22)',
+                    border: 'none',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '24px',
+                    color: '#fff',
+                    fontWeight: 700,
+                  }}
+                  onClick={() => navigate(-1)}
+                  aria-label="Go back"
+                >
+                  ←
+                </button>
+              </div>
               <div style={styles.heroWrapper}>
                 <section style={styles.heroSection}>
                   <div style={styles.heroLeft}>
@@ -813,6 +907,17 @@ const GameDetail = () => {
                 )}
               </section>
               </div>
+              
+              {/* You may also like section */}
+              {relatedGames.length > 0 && (
+                <div style={styles.relatedGamesWrapper}>
+                  <GameCarousel
+                    games={relatedGames}
+                    title="You may also like"
+                    onToggleWishlist={handleWishlistToggle}
+                  />
+                </div>
+              )}
               </div>
               </div>
             </>
@@ -1452,5 +1557,9 @@ const styles = {
     fontSize: '13px',
     color: '#ffffff',
     fontWeight: 600,
+  },
+  relatedGamesWrapper: {
+    marginTop: '24px',
+    padding: '0 16px',
   },
 };

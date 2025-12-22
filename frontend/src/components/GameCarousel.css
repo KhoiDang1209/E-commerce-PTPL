@@ -1,0 +1,5 @@
+/* Hide scrollbar for webkit browsers */
+.carousel-hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+

@@ -57,12 +57,16 @@ const SearchGames = () => {
     return wishlist.some(item => item.app_id === appId);
   };
 
-  const toggleWishlist = (e, game) => {
+  const toggleWishlist = async (e, game) => {
     e.stopPropagation();
-    if (isInWishlist(game.app_id)) {
-      removeFromWishlist(game.app_id);
-    } else {
-      addToWishlist(game);
+    try {
+      if (isInWishlist(game.app_id)) {
+        await removeFromWishlist(game.app_id);
+      } else {
+        await addToWishlist(game.app_id);
+      }
+    } catch (err) {
+      console.error('Error toggling wishlist:', err);
     }
   };
 
@@ -112,44 +116,61 @@ const SearchGames = () => {
             {games.length === 0 ? (
               <div style={styles.message}>No games found. Try a different search term.</div>
             ) : (
-              <div style={styles.gamesGrid}>
-                {games.map((game) => (
+              <div style={styles.gamesList}>
+                {games.map((game, index) => (
                   <div
                     key={game.app_id}
                     style={styles.gameCard}
-                    onClick={() => navigate(`/game/${game.app_id}`)}
                   >
-                    <div style={styles.gameImage}>
-                      <img
-                        src={game.header_image || '/placeholder-game.jpg'}
-                        alt={game.name}
-                        style={styles.image}
-                        onError={(e) => {
-                          e.target.src = '/placeholder-game.jpg';
-                        }}
-                      />
-                      <button
-                        style={styles.wishlistButton}
-                        onClick={(e) => toggleWishlist(e, game)}
-                        title={isInWishlist(game.app_id) ? 'Remove from wishlist' : 'Add to wishlist'}
-                      >
-                        {isInWishlist(game.app_id) ? '❤️' : '🤍'}
-                      </button>
+                    <div
+                      style={styles.gameClickable}
+                      onClick={() => navigate(`/game/${game.app_id}`)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          navigate(`/game/${game.app_id}`);
+                        }
+                      }}
+                    >
+                      <div style={styles.gameImage}>
+                        <img
+                          src={game.header_image || '/placeholder-game.jpg'}
+                          alt={game.name}
+                          style={styles.gameImageImg}
+                          onError={(e) => {
+                            e.target.src = '/placeholder-game.jpg';
+                          }}
+                        />
+                      </div>
                     </div>
-                    <div style={styles.gameInfo}>
+                    <div style={styles.gameContent}>
                       <h3 style={styles.gameName}>{game.name}</h3>
-                      <div style={styles.gamePrice}>
-                        {game.discount_percent > 0 ? (
-                          <>
-                            <span style={styles.originalPrice}>
-                              ${parseFloat(game.price_final / (1 - game.discount_percent / 100)).toFixed(2)}
-                            </span>
-                            <span style={styles.discount}>-{game.discount_percent}%</span>
-                          </>
-                        ) : null}
-                        <span style={styles.finalPrice}>
-                          {formatPrice(game.price_final)}
-                        </span>
+                      <div style={styles.gamePriceRow}>
+                        <div style={styles.gamePrice}>
+                          {game.discount_percent > 0 ? (
+                            <>
+                              <span style={styles.originalPrice}>
+                                ${parseFloat(game.price_final / (1 - game.discount_percent / 100)).toFixed(2)}
+                              </span>
+                              <span style={styles.discount}>-{game.discount_percent}%</span>
+                            </>
+                          ) : null}
+                          <span style={styles.finalPrice}>
+                            {formatPrice(game.price_final)}
+                          </span>
+                        </div>
+                        <button
+                          style={styles.wishlistButton}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleWishlist(e, game);
+                          }}
+                          title={isInWishlist(game.app_id) ? 'Remove from wishlist' : 'Add to wishlist'}
+                          type="button"
+                        >
+                          {isInWishlist(game.app_id) ? '❤️' : '🤍'}
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -237,42 +258,70 @@ const styles = {
     color: 'rgba(33, 81, 34, 0.7)',
     fontSize: '0.9rem',
   },
-  gamesGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-    gap: '20px',
+  gamesList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '14px',
     maxWidth: '1100px',
     marginLeft: 'auto',
     marginRight: 'auto',
   },
   gameCard: {
+    display: 'grid',
+    gridTemplateColumns: '140px 1fr',
+    alignItems: 'center',
+    gap: '16px',
+    padding: '16px 18px',
+    borderRadius: '18px',
     background: '#fff',
-    borderRadius: '14px',
-    overflow: 'hidden',
     border: '1px solid rgba(33, 81, 34, 0.12)',
-    boxShadow: '0 10px 22px rgba(33, 81, 34, 0.08)',
+    boxShadow: '0 8px 18px rgba(33, 81, 34, 0.08)',
+    position: 'relative',
+    transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+  },
+  gameClickable: {
     cursor: 'pointer',
-    transition: 'transform 0.2s, box-shadow 0.2s',
   },
   gameImage: {
-    position: 'relative',
-    width: '100%',
-    paddingTop: '75%',
-    background: '#f7f4ef',
+    width: '140px',
+    height: '92px',
+    borderRadius: '12px',
     overflow: 'hidden',
+    flexShrink: 0,
+    background: '#c9ccbb',
+    boxShadow: '0 6px 14px rgba(33, 81, 34, 0.12)',
   },
-  image: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
+  gameImageImg: {
     width: '100%',
     height: '100%',
     objectFit: 'cover',
+    display: 'block',
+  },
+  gameContent: {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '8px',
+  },
+  gameName: {
+    fontSize: '1.1rem',
+    fontWeight: '600',
+    margin: 0,
+    color: '#1c231f',
+    fontFamily: "'Fraunces', serif",
+  },
+  gamePriceRow: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: '12px',
+  },
+  gamePrice: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
   },
   wishlistButton: {
-    position: 'absolute',
-    top: '8px',
-    right: '8px',
     background: 'rgba(255, 255, 255, 0.9)',
     border: '1px solid rgba(33, 81, 34, 0.15)',
     borderRadius: '50%',
@@ -284,23 +333,7 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'center',
     transition: 'background 0.2s, transform 0.2s',
-  },
-  gameInfo: {
-    padding: '12px',
-  },
-  gameName: {
-    fontSize: '0.95rem',
-    fontWeight: '600',
-    margin: '0 0 8px 0',
-    color: '#1c231f',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap',
-  },
-  gamePrice: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
+    flexShrink: 0,
   },
   originalPrice: {
     fontSize: '0.85rem',
